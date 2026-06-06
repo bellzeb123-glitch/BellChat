@@ -59,8 +59,10 @@ public class MsgSpyManager {
      * Notifies all online spying admins and appends to log file.
      */
     public void handle(String senderName, String receiverName, String message) {
-        String spyFormat = plugin.getMessageManager().color(
-                "&8[&6SPY&8] &7" + senderName + " &8→ &7" + receiverName + "&8: &f" + message);
+        String spyFormat = plugin.getMessageManager().get("msg-spy-format")
+                .replace("{sender}", senderName)
+                .replace("{receiver}", receiverName)
+                .replace("{message}", message);
 
         // Notify all online admins with spy mode active
         for (UUID uuid : spyingAdmins) {

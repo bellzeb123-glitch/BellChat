@@ -14,8 +14,8 @@ chat-format: "{prefix}&7{displayname}&r&7: {message}"
 # If player's group is not listed here, chat-format above is used.
 group-formats:
   default: "&7{displayname}&r&7: {message}"
-  vip: "{prefix}&e{displayname}&r&7: {message}"
-  admin: "{prefix}&c{displayname}&r&7: {message}"
+  vip: "{prefix}&5{displayname}&r&7: {message}"
+  admin: "{prefix}&6{displayname}&r&7: {message}"
 
 # ── Private Messages ─────────────────────────────────────────
 msg-format-sender:   "&8[&7You &8→ &7{receiver}&8] &f{message}"
