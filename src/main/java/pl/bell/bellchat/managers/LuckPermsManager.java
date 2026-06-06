@@ -72,9 +72,9 @@ public class LuckPermsManager {
         }
         // Fallback based on primary group
         return switch (user.getPrimaryGroup().toLowerCase()) {
-            case "admin"  -> "&6";
-            case "vip"    -> "&5";
-            default       -> "&f";
+            case "admin"  -> "\u00a76";
+            case "vip"    -> "\u00a75";
+            default       -> "\u00a7f";
         };
     }
 
