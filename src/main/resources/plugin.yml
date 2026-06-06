@@ -1,0 +1,73 @@
+name: BellChat
+version: 1.0.0
+main: pl.bell.bellchat.BellChat
+api-version: '1.21'
+author: bellzeb123-glitch
+description: Full-featured chat plugin with LuckPerms integration.
+
+softdepend:
+  - LuckPerms
+
+commands:
+  bellchat:
+    description: BellChat admin panel
+    aliases: [bchat]
+    usage: /<command>
+  msg:
+    description: Send a private message
+    aliases: [tell, w, pm]
+    usage: /<command> <player> <message>
+  reply:
+    description: Reply to last private message
+    aliases: [r]
+    usage: /<command> <message>
+  mute:
+    description: Mute a player
+    usage: /<command> <player> [duration] [reason]
+  unmute:
+    description: Unmute a player
+    usage: /<command> <player>
+  clearchat:
+    description: Clear the chat
+    aliases: [cc]
+    usage: /<command>
+  chatlock:
+    description: Lock or unlock the chat
+    aliases: [cl]
+    usage: /<command>
+  ignore:
+    description: Ignore or unignore a player
+    usage: /<command> <player>
+  msgspy:
+    description: Toggle private message spy mode
+    aliases: [spy]
+    usage: /<command>
+
+permissions:
+  bellchat.admin:
+    description: Full admin access
+    default: op
+  bellchat.mute:
+    description: Can mute players
+    default: op
+  bellchat.clearchat:
+    description: Can clear chat
+    default: op
+  bellchat.chatlock:
+    description: Can lock/unlock chat
+    default: op
+  bellchat.chatlock.bypass:
+    description: Can chat even when locked
+    default: op
+  bellchat.color:
+    description: Can use color codes in chat
+    default: false
+  bellchat.mention:
+    description: Can be pinged by mentions
+    default: true
+  bellchat.antispam.bypass:
+    description: Bypass antispam cooldown
+    default: op
+  bellchat.spy:
+    description: Can toggle spy mode to see all private messages
+    default: op

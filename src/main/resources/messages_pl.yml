@@ -1,0 +1,39 @@
+# ============================================================
+#  BellChat - Wiadomości (Polski)
+# ============================================================
+prefix: "&8[&6BellChat&8] "
+
+msg-player-offline: "&cGracz &f{player} &cnie jest online."
+msg-no-reply: "&cNie masz nikogo do kogo możesz odpisać."
+msg-self: "&cNie możesz wysłać wiadomości do siebie."
+msg-ignored: "&cIgnorujesz gracza &f{player}&c."
+msg-ignored-by: "&cGracz &f{player} &cCię ignoruje."
+
+mute-success: "&aWyciszono gracza &f{player}&a na &f{duration}&a. Powód: &f{reason}"
+mute-permanent: "&aTrawle wyciszono gracza &f{player}&a. Powód: &f{reason}"
+mute-notify: "&cZostałeś wyciszony na &f{duration}&c. Powód: &f{reason}"
+mute-notify-permanent: "&cZostałeś trwale wyciszony."
+mute-already: "&cGracz &f{player} &cjest już wyciszony."
+mute-blocked: "&cJesteś wyciszony. &7Wygasa za: &f{remaining}"
+mute-blocked-permanent: "&cJesteś trwale wyciszony."
+unmute-success: "&aOdciszono gracza &f{player}&a."
+unmute-not-muted: "&cGracz &f{player} &cnie jest wyciszony."
+
+clearchat-done: "&aChat wyczyszczony przez &f{player}&a."
+chatlock-locked: "&cChat został &4zablokowany &cprzez &f{player}&c."
+chatlock-unlocked: "&aChat został &2odblokowany &aprzez &f{player}&a."
+chatlock-blocked: "&cChat jest aktualnie zablokowany."
+
+ignore-added: "&aTeraz ignorujesz gracza &f{player}&a."
+ignore-removed: "&aJuż nie ignorujesz gracza &f{player}&a."
+ignore-self: "&cNie możesz ignorować siebie."
+ignore-list-header: "&8=== &6Ignorowani gracze &8==="
+ignore-list-empty: "&7Nie ignorujesz nikogo."
+
+antispam-cooldown: "&cPoczekaj &f{seconds}s &cprzed wysłaniem kolejnej wiadomości."
+antispam-duplicate: "&cNie wysyłaj tej samej wiadomości dwa razy."
+
+no-permission: "&cNie masz uprawnień."
+player-only: "&cTej komendy może używać tylko gracz."
+invalid-args: "&cNieprawidłowe argumenty. Użyj &f/bchat help"
+reload-done: "&aKonfiguracja przeładowana."

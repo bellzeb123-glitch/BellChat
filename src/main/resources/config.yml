@@ -1,0 +1,62 @@
+# ============================================================
+#  BellChat - Configuration
+# ============================================================
+
+language: "en"
+
+# ── Chat Format ──────────────────────────────────────────────
+# Placeholders: {prefix} {suffix} {name} {displayname} {world} {message}
+# Color codes: & followed by color code (&a, &c, &6, etc.)
+# To disable a placeholder just remove it from the format.
+chat-format: "{prefix}&7{displayname}&r&7: {message}"
+
+# Different formats per group (group name must match LuckPerms group)
+# If player's group is not listed here, chat-format above is used.
+group-formats:
+  default: "&7{displayname}&r&7: {message}"
+  vip: "{prefix}&e{displayname}&r&7: {message}"
+  admin: "{prefix}&c{displayname}&r&7: {message}"
+
+# ── Private Messages ─────────────────────────────────────────
+msg-format-sender:   "&8[&7You &8→ &7{receiver}&8] &f{message}"
+msg-format-receiver: "&8[&7{sender} &8→ &7You&8] &f{message}"
+
+# ── Antispam ─────────────────────────────────────────────────
+antispam:
+  enabled: false
+  # Cooldown in seconds between messages
+  cooldown-seconds: 3
+  # Block identical messages sent in a row
+  block-duplicate: true
+
+# ── Mention Ping ─────────────────────────────────────────────
+mention:
+  enabled: true
+  # Sound played when mentioned (Bukkit sound name)
+  sound: "ENTITY_EXPERIENCE_ORB_PICKUP"
+  # Highlight color for the mentioned name in chat
+  highlight-color: "&e@"
+
+# ── Profanity Filter ─────────────────────────────────────────
+profanity-filter:
+  enabled: false
+  # Replace matched words with this character repeated
+  replacement: "***"
+  # Add words to filter (lowercase, plugin checks case-insensitively)
+  words:
+    - "badword1"
+    - "badword2"
+
+# ── VIP Rank Notification ────────────────────────────────────
+vip-notification:
+  enabled: true
+  # Broadcast message when a player receives VIP rank
+  # Placeholder: {player}
+  message: "&6✦ &e{player} &6has joined the VIP ranks! &6✦"
+  # LuckPerms group name to watch for
+  vip-group: "vip"
+
+# ── Chat Lock ────────────────────────────────────────────────
+chatlock:
+  # Message shown to players when chat is locked
+  locked-message: "&cChat is currently locked by an administrator."

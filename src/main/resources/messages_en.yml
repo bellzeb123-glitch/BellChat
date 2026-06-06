@@ -1,0 +1,45 @@
+# ============================================================
+#  BellChat - Messages (English)
+# ============================================================
+prefix: "&8[&6BellChat&8] "
+
+# Private messages
+msg-player-offline: "&cPlayer &f{player} &cis not online."
+msg-no-reply: "&cYou have no one to reply to."
+msg-self: "&cYou cannot message yourself."
+msg-ignored: "&cYou are ignoring &f{player}&c."
+msg-ignored-by: "&c&f{player} &cis ignoring you."
+
+# Mute
+mute-success: "&aYou have muted &f{player}&a for &f{duration}&a. Reason: &f{reason}"
+mute-permanent: "&aYou have permanently muted &f{player}&a. Reason: &f{reason}"
+mute-notify: "&cYou have been muted for &f{duration}&c. Reason: &f{reason}"
+mute-notify-permanent: "&cYou have been permanently muted. Reason: &f{reason}"
+mute-already: "&c&f{player} &cis already muted."
+mute-blocked: "&cYou are muted. &7Expires in: &f{remaining}"
+mute-blocked-permanent: "&cYou are permanently muted."
+unmute-success: "&aYou have unmuted &f{player}&a."
+unmute-not-muted: "&c&f{player} &cis not muted."
+
+# Clearchat / Chatlock
+clearchat-done: "&aChat cleared by &f{player}&a."
+chatlock-locked: "&cChat has been &4locked &cby &f{player}&c."
+chatlock-unlocked: "&aChat has been &2unlocked &aby &f{player}&a."
+chatlock-blocked: "&cChat is currently locked."
+
+# Ignore
+ignore-added: "&aYou are now ignoring &f{player}&a."
+ignore-removed: "&aYou are no longer ignoring &f{player}&a."
+ignore-self: "&cYou cannot ignore yourself."
+ignore-list-header: "&8=== &6Ignored Players &8==="
+ignore-list-empty: "&7You are not ignoring anyone."
+
+# Antispam
+antispam-cooldown: "&cPlease wait &f{seconds}s &cbefore sending another message."
+antispam-duplicate: "&cPlease do not send the same message twice."
+
+# General
+no-permission: "&cYou do not have permission to do that."
+player-only: "&cThis command can only be used by players."
+invalid-args: "&cInvalid arguments. Use &f/bchat help"
+reload-done: "&aConfiguration reloaded."
