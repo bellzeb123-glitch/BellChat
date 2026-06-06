@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-class ChatLockCommand implements CommandExecutor {
+public class ChatLockCommand implements CommandExecutor {
     private final BellChat plugin;
     ChatLockCommand(BellChat plugin) { this.plugin = plugin; }
 

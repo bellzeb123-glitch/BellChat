@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-class ReplyCommand implements CommandExecutor {
+public class ReplyCommand implements CommandExecutor {
     private final BellChat plugin;
     ReplyCommand(BellChat plugin) { this.plugin = plugin; }
 

@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-class MuteCommand implements CommandExecutor, TabCompleter {
+public class MuteCommand implements CommandExecutor, TabCompleter {
     private final BellChat plugin;
     MuteCommand(BellChat plugin) { this.plugin = plugin; }
 

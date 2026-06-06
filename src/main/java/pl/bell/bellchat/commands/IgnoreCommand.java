@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-class IgnoreCommand implements CommandExecutor, TabCompleter {
+public class IgnoreCommand implements CommandExecutor, TabCompleter {
     private final BellChat plugin;
     IgnoreCommand(BellChat plugin) { this.plugin = plugin; }
 

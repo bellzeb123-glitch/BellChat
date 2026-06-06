@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-class ClearChatCommand implements CommandExecutor {
+public class ClearChatCommand implements CommandExecutor {
     private final BellChat plugin;
     ClearChatCommand(BellChat plugin) { this.plugin = plugin; }
 
