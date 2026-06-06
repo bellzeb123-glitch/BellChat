@@ -48,9 +48,6 @@ public class MsgCommand implements CommandExecutor, TabCompleter {
         player.sendMessage(toSender);
         target.sendMessage(toReceiver);
 
-        // Spy + log
-        plugin.getMsgSpyManager().handle(player.getName(), target.getName(), message);
-
         // Set reply targets
         plugin.getChatStateManager().setReplyTarget(player.getUniqueId(), target.getUniqueId());
         plugin.getChatStateManager().setReplyTarget(target.getUniqueId(), player.getUniqueId());
