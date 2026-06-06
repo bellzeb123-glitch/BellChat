@@ -8,14 +8,14 @@ language: "en"
 # Placeholders: {prefix} {suffix} {name} {displayname} {world} {message}
 # Color codes: & followed by color code (&a, &c, &6, etc.)
 # To disable a placeholder just remove it from the format.
-chat-format: "{prefix}&7{displayname}&r&7: {message}"
+chat-format: "{prefix}&f{displayname}&r&f: {message}"
 
 # Different formats per group (group name must match LuckPerms group)
 # If player's group is not listed here, chat-format above is used.
 group-formats:
-  default: "&7{displayname}&r&7: {message}"
-  vip: "{prefix}&5{displayname}&r&7: {message}"
-  admin: "{prefix}&6{displayname}&r&7: {message}"
+  default: "&7{displayname}&r&f: {message}"
+  vip: "{prefix}&5{displayname}&r&f: {message}"
+  admin: "{prefix}&6{displayname}&r&f: {message}"
 
 # ── Private Messages ─────────────────────────────────────────
 msg-format-sender:   "&8[&7You &8→ &7{receiver}&8] &f{message}"

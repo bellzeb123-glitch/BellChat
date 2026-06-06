@@ -38,11 +38,14 @@ public class MsgCommand implements CommandExecutor, TabCompleter {
         }
 
         String message = String.join(" ", List.of(args).subList(1, args.length));
+        // Get rank colors from LuckPerms
+        String senderColor   = plugin.getLuckPermsManager().getChatColor(player);
+        String receiverColor = plugin.getLuckPermsManager().getChatColor(target);
         String toSender   = msg.get("msg-format-sender")
-                .replace("{receiver}", target.getName())
+                .replace("{receiver}", receiverColor + target.getName())
                 .replace("{message}", message);
         String toReceiver = msg.get("msg-format-receiver")
-                .replace("{sender}", player.getName())
+                .replace("{sender}", senderColor + player.getName())
                 .replace("{message}", message);
 
         player.sendMessage(toSender);

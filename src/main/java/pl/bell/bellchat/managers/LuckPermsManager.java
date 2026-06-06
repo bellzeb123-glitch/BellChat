@@ -3,6 +3,7 @@ package pl.bell.bellchat.managers;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.query.QueryOptions;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import pl.bell.bellchat.BellChat;
@@ -54,6 +55,27 @@ public class LuckPermsManager {
         var meta = user.getCachedData().getMetaData(QueryOptions.nonContextual());
         String suffix = meta.getSuffix();
         return suffix != null ? suffix : "";
+    }
+
+    /**
+     * Returns the chat color code for the player's primary group.
+     * Falls back to white if no color mapping found.
+     */
+    public String getChatColor(Player player) {
+        if (luckPerms == null) return "&f";
+        User user = luckPerms.getUserManager().getUser(player.getUniqueId());
+        if (user == null) return "&f";
+        // Try to get color from prefix first character
+        String prefix = getPrefix(player);
+        if (prefix != null && prefix.length() >= 2 && prefix.charAt(0) == '\u00a7') {
+            return "\u00a7" + prefix.charAt(1);
+        }
+        // Fallback based on primary group
+        return switch (user.getPrimaryGroup().toLowerCase()) {
+            case "admin"  -> "&6";
+            case "vip"    -> "&5";
+            default       -> "&f";
+        };
     }
 
     public boolean isHooked() { return luckPerms != null; }

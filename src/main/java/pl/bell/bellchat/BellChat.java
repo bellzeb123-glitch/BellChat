@@ -33,6 +33,7 @@ public class BellChat extends JavaPlugin {
         this.ignoreManager   = new IgnoreManager(this);
         this.antispamManager = new AntispamManager(this);
         this.chatStateManager= new ChatStateManager(this);
+        this.msgSpyManager   = new MsgSpyManager(this);
         this.adminGUI        = new AdminGUI(this);
 
         // Listeners

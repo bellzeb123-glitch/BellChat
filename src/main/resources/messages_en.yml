@@ -9,9 +9,9 @@ msg-no-reply: "&cYou have no one to reply to."
 msg-self: "&cYou cannot message yourself."
 msg-ignored: "&cYou are ignoring &f{player}&c."
 msg-ignored-by: "&c&f{player} &cis ignoring you."
-msg-format-sender: "&8[&7You &8→ &7{receiver}&8] &f{message}"
-msg-format-receiver: "&8[&7{sender} &8→ &7You&8] &f{message}"
-msg-spy-format: "&8[&6SPY&8] &7{sender} &8→ &7{receiver}&8: &f{message}"
+msg-format-sender: "&9[PRIV] &fYou &9→ &f{message}"
+msg-format-receiver: "&9[PRIV] &f{sender} &9→ &f{message}"
+msg-spy-format: "&8[SPY] &7{sender} &8→ &7{receiver}&8: &7{message}"
 
 # Mute
 mute-success: "&aYou have muted &f{player}&a for &f{duration}&a. Reason: &f{reason}"

@@ -26,10 +26,12 @@ public class ReplyCommand implements CommandExecutor {
         if (target == null) { msg.send(sender, "msg-no-reply"); return true; }
 
         String message   = String.join(" ", args);
+        String senderColor   = plugin.getLuckPermsManager().getChatColor(player);
+        String receiverColor = plugin.getLuckPermsManager().getChatColor(target);
         player.sendMessage(msg.get("msg-format-sender")
-                .replace("{receiver}", target.getName()).replace("{message}", message));
+                .replace("{receiver}", receiverColor + target.getName()).replace("{message}", message));
         target.sendMessage(msg.get("msg-format-receiver")
-                .replace("{sender}", player.getName()).replace("{message}", message));
+                .replace("{sender}", senderColor + player.getName()).replace("{message}", message));
         plugin.getMsgSpyManager().handle(player.getName(), target.getName(), message);
         plugin.getChatStateManager().setReplyTarget(target.getUniqueId(), player.getUniqueId());
         return true;
