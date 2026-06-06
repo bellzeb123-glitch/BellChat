@@ -30,6 +30,7 @@ public class ReplyCommand implements CommandExecutor {
                 .replace("{receiver}", target.getName()).replace("{message}", message));
         target.sendMessage(msg.get("msg-format-receiver")
                 .replace("{sender}", player.getName()).replace("{message}", message));
+        plugin.getMsgSpyManager().handle(player.getName(), target.getName(), message);
         plugin.getChatStateManager().setReplyTarget(target.getUniqueId(), player.getUniqueId());
         return true;
     }

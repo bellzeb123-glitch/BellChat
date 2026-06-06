@@ -7,18 +7,17 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
- * Handles private message spying and logging.
- *
- * Spy mode  — admins with bellchat.spy toggle it with /msgspy
- *             and see all PMs in real time in their chat.
- * File log  — every PM is appended to logs/private-messages.log
+ * Private message spy — always ON by default for admins with bellchat.spy.
+ * Can be toggled off per-admin with /msgspy.
  */
 public class MsgSpyManager {
 
     private final BellChat plugin;
-    private final Set<UUID> spyingAdmins = new HashSet<>();
     private File logFile;
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+    // Admins who explicitly DISABLED spy — everyone else with bellchat.spy sees PMs
+    private final Set<UUID> spyDisabled = new HashSet<>();
 
     public MsgSpyManager(BellChat plugin) {
         this.plugin = plugin;
@@ -36,27 +35,27 @@ public class MsgSpyManager {
         }
     }
 
-    // ── Spy mode ──────────────────────────────────────────────
-
-    public boolean toggleSpy(UUID adminUUID) {
-        if (spyingAdmins.contains(adminUUID)) {
-            spyingAdmins.remove(adminUUID);
-            return false;
+    /**
+     * Toggle spy for a specific admin.
+     * Returns true if spy is now ENABLED, false if DISABLED.
+     */
+    public boolean toggle(UUID adminUUID) {
+        if (spyDisabled.contains(adminUUID)) {
+            spyDisabled.remove(adminUUID);
+            return true; // now enabled
         } else {
-            spyingAdmins.add(adminUUID);
-            return true;
+            spyDisabled.add(adminUUID);
+            return false; // now disabled
         }
     }
 
     public boolean isSpy(UUID uuid) {
-        return spyingAdmins.contains(uuid);
+        return !spyDisabled.contains(uuid);
     }
 
-    // ── Notify + Log ──────────────────────────────────────────
-
     /**
-     * Called after every private message is sent.
-     * Notifies all online spying admins and appends to log file.
+     * Called after every private message.
+     * Sends to all online admins with bellchat.spy who haven't disabled it.
      */
     public void handle(String senderName, String receiverName, String message) {
         String spyFormat = plugin.getMessageManager().get("msg-spy-format")
@@ -64,31 +63,25 @@ public class MsgSpyManager {
                 .replace("{receiver}", receiverName)
                 .replace("{message}", message);
 
-        // Notify all online admins with spy mode active
-        for (UUID uuid : spyingAdmins) {
-            var player = plugin.getServer().getPlayer(uuid);
-            if (player != null && player.isOnline()) {
-                player.sendMessage(spyFormat);
-            }
+        for (var player : plugin.getServer().getOnlinePlayers()) {
+            if (!player.hasPermission("bellchat.spy")) continue;
+            if (spyDisabled.contains(player.getUniqueId())) continue;
+            if (player.getName().equals(senderName)) continue;
+            if (player.getName().equals(receiverName)) continue;
+            player.sendMessage(spyFormat);
         }
 
-        // Always log to file
         logToFile(senderName, receiverName, message);
     }
 
     private void logToFile(String sender, String receiver, String message) {
         try (FileWriter fw = new FileWriter(logFile, true);
              BufferedWriter bw = new BufferedWriter(fw)) {
-            String line = "[" + dateFormat.format(new Date()) + "] "
-                    + sender + " -> " + receiver + ": " + message;
-            bw.write(line);
+            bw.write("[" + dateFormat.format(new Date()) + "] "
+                    + sender + " -> " + receiver + ": " + message);
             bw.newLine();
         } catch (IOException e) {
             plugin.getLogger().warning("Cannot write to private-messages.log: " + e.getMessage());
         }
-    }
-
-    public void clearSpy(UUID uuid) {
-        spyingAdmins.remove(uuid);
     }
 }
