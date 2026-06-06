@@ -11,7 +11,7 @@ import java.util.UUID;
 
 public class UnmuteCommand implements CommandExecutor, TabCompleter {
     private final BellChat plugin;
-    UnmuteCommand(BellChat plugin) { this.plugin = plugin; }
+    public UnmuteCommand(BellChat plugin) { this.plugin = plugin; }
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {

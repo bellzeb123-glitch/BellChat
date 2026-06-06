@@ -11,7 +11,7 @@ import java.util.UUID;
 
 public class ChatLockCommand implements CommandExecutor {
     private final BellChat plugin;
-    ChatLockCommand(BellChat plugin) { this.plugin = plugin; }
+    public ChatLockCommand(BellChat plugin) { this.plugin = plugin; }
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {

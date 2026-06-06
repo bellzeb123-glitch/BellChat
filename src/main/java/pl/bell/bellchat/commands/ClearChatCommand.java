@@ -11,7 +11,7 @@ import java.util.UUID;
 
 public class ClearChatCommand implements CommandExecutor {
     private final BellChat plugin;
-    ClearChatCommand(BellChat plugin) { this.plugin = plugin; }
+    public ClearChatCommand(BellChat plugin) { this.plugin = plugin; }
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {

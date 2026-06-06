@@ -11,7 +11,7 @@ import java.util.UUID;
 
 public class IgnoreCommand implements CommandExecutor, TabCompleter {
     private final BellChat plugin;
-    IgnoreCommand(BellChat plugin) { this.plugin = plugin; }
+    public IgnoreCommand(BellChat plugin) { this.plugin = plugin; }
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {

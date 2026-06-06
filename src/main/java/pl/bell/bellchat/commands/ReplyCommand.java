@@ -11,7 +11,7 @@ import java.util.UUID;
 
 public class ReplyCommand implements CommandExecutor {
     private final BellChat plugin;
-    ReplyCommand(BellChat plugin) { this.plugin = plugin; }
+    public ReplyCommand(BellChat plugin) { this.plugin = plugin; }
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
