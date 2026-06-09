@@ -1,92 +1,89 @@
 # ============================================================
-#  BellChat - Configuration
+#  BellChat v2.0 - Configuration
 # ============================================================
 
-language: "en"
+language: "pl"
 
-# ── Chat Format ──────────────────────────────────────────────
-# Placeholders: {prefix} {suffix} {name} {displayname} {world} {message}
-# Color codes: & followed by color code (&a, &c, &6, etc.)
-# To disable a placeholder just remove it from the format.
-chat-format: "{prefix}&f{displayname}&r&f: {message}"
+# ── Chat Format (fallback dla gracza bez grupy w LP) ──────────
+chat-format: "&f{player}&f: {message}"
 
-# Different formats per group (group name must match LuckPerms group)
-# If player's group is not listed here, chat-format above is used.
+# Formaty per-grupa LuckPerms.
+# {prefix} = prefix z LP (§-kody stripowane, kolor z formatu decyduje)
+# {player} = czysta nazwa gracza
+# {message} = zawsze biały (&f) — wymuszony z kodu, nie pisz tu koloru
+#
+# WAŻNE dla VIP: &5 przed {prefix} I przed {player} sprawia że
+# CAŁY nick (prefix + nazwa) jest fioletowy. Wiadomość zostaje biała.
 group-formats:
-  default: "&7{displayname}&r&f: {message}"
-  vip: "{prefix}&5{displayname}&r&f: {message}"
-  admin: "{prefix}&6{displayname}&r&f: {message}"
+  default: "&f{player}&f: {message}"
+  vip:     "&5{prefix}&5{player}&5:&f {message}"
+  admin:   "&6{prefix}&6{player}&6:&f {message}"
 
-# ── Private Messages ─────────────────────────────────────────
-msg-format-sender:   "&8[&7You &8→ &7{receiver}&8] &f{message}"
-msg-format-receiver: "&8[&7{sender} &8→ &7You&8] &f{message}"
+# ── Private Messages ──────────────────────────────────────────
+msg-format-sender:   "&9[PRIV] &fTy &9→ &f{receiver}&9: &f{message}"
+msg-format-receiver: "&9[PRIV] &f{sender} &9→ &fTy&9: &f{message}"
 
-# ── Antispam ─────────────────────────────────────────────────
+# ── Antispam ──────────────────────────────────────────────────
 antispam:
   enabled: false
-  # Cooldown in seconds between messages
   cooldown-seconds: 3
-  # Block identical messages sent in a row
   block-duplicate: true
 
-# ── Mention Ping ─────────────────────────────────────────────
+# ── Mention Ping ──────────────────────────────────────────────
 mention:
   enabled: true
-  # Sound played when mentioned (Bukkit sound name)
   sound: "ENTITY_EXPERIENCE_ORB_PICKUP"
-  # Highlight color for the mentioned name in chat
   highlight-color: "&e@"
 
-# ── Profanity Filter ─────────────────────────────────────────
+# ── Profanity Filter ──────────────────────────────────────────
 profanity-filter:
   enabled: false
-  # Replace matched words with this character repeated
   replacement: "***"
-  # Add words to filter (lowercase, plugin checks case-insensitively)
   words:
     - "badword1"
     - "badword2"
 
-# ── VIP Rank Notification ────────────────────────────────────
+# ── VIP Rank Notification ─────────────────────────────────────
 vip-notification:
   enabled: true
-  # Broadcast message when a player receives VIP rank
-  # Placeholder: {player}
-  message: "&6✦ &e{player} &6has joined the VIP ranks! &6✦"
-  # LuckPerms group name to watch for
+  message: "&6✦ &e{player} &6dołączył do rankingu VIP! &6✦"
   vip-group: "vip"
 
-# ── Chat Lock ────────────────────────────────────────────────
+# ── Chat Lock ─────────────────────────────────────────────────
 chatlock:
-  # Message shown to players when chat is locked
-  locked-message: "&cChat is currently locked by an administrator."
+  locked-message: "&cChat jest aktualnie zablokowany."
 
-# ── v2.0: Kanały ──────────────────────────────────────────────────────────────
+# ── v2.0: Kanały ──────────────────────────────────────────────
+# Placeholdery: {prefix} {player} {message} {channel}
+# {message} zawsze biały z kodu — nie dodawaj &f przy {message}
+# {prefix} — §-kody stripowane, kolor z formatu decyduje
 channels:
   global:
     type: GLOBAL
     display-name: "&aGlobal"
-    # {prefix} = LP prefix, {player} = nazwa gracza, {message} = tekst (zawsze BIAŁY)
-    format: "{prefix} {player}&7: {message}"
+    # Global używa group-formats — ten format to fallback
+    format: "&f{player}&f: {message}"
     enabled: true
 
   local:
     type: LOCAL
     display-name: "&eLocal"
-    format: "&7[&eL&7] {prefix} {player}&7: {message}"
+    format: "&8[&eL&8] &f{player}&f: {message}"
     local-radius: 100
     enabled: true
 
   vip:
     type: VIP
-    display-name: "&6VIP"
-    format: "&6[VIP] {prefix} {player}&7: {message}"
+    display-name: "&5VIP"
+    # &5 przed {prefix} i {player} → fioletowy prefix LP + fioletowy nick
+    # &f przed {message} → biała wiadomość (kod też to wymusza, dla pewności)
+    format: "&8[&5VIP&8] &5{prefix}&5{player}&5:&f {message}"
     required-permission: "bellchat.channel.vip"
     enabled: true
 
   admin:
     type: ADMIN
     display-name: "&cAdmin"
-    format: "&c[Admin] {prefix} {player}&7: {message}"
+    format: "&8[&cADM&8] &6{prefix}&6{player}&6:&f {message}"
     required-permission: "bellchat.channel.admin"
     enabled: true

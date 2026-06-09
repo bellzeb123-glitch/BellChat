@@ -19,13 +19,7 @@ public class ChannelManager {
     private final BellChat plugin;
     private final Logger log;
 
-    /** All defined channels. LinkedHashMap keeps config order. */
     private final Map<String, Channel> channels = new LinkedHashMap<>();
-
-    /**
-     * Player → current channel id.
-     * ConcurrentHashMap: channel switches can happen from AsyncChatEvent thread.
-     */
     private final Map<UUID, String> playerChannels = new ConcurrentHashMap<>();
 
     public ChannelManager(BellChat plugin) {
@@ -53,7 +47,7 @@ public class ChannelManager {
             try {
                 type = ChannelType.valueOf(ch.getString("type", "GLOBAL").toUpperCase());
             } catch (IllegalArgumentException e) {
-                log.warning("[ChannelManager] Nieznany typ kanału '" + ch.getString("type") + "' dla '" + key + "', pomijam.");
+                log.warning("[ChannelManager] Nieznany typ '" + ch.getString("type") + "' dla '" + key + "', pomijam.");
                 continue;
             }
 
@@ -61,7 +55,7 @@ public class ChannelManager {
                     key.toLowerCase(),
                     type,
                     ch.getString("display-name", "&f" + key),
-                    ch.getString("format", "{prefix} {player}&7: {message}"),
+                    ch.getString("format", "&f{player}: {message}"),
                     ch.getInt("local-radius", -1),
                     ch.getString("required-permission", null),
                     ch.getBoolean("enabled", true)
@@ -69,7 +63,7 @@ public class ChannelManager {
         }
 
         if (channels.isEmpty()) {
-            log.warning("[ChannelManager] Żadne kanały nie zostały załadowane — ładuję domyślne.");
+            log.warning("[ChannelManager] Brak kanałów po załadowaniu — ładuję domyślne.");
             loadDefaults();
         } else {
             log.info("[ChannelManager] Załadowano kanały: " + channels.keySet());
@@ -78,19 +72,18 @@ public class ChannelManager {
 
     public void reload() {
         load();
-        // Gracze będący na kanale który zniknął — cofają się do global
         playerChannels.entrySet().removeIf(e -> !channels.containsKey(e.getValue()));
     }
 
     private void loadDefaults() {
         channels.put("global", new Channel("global", ChannelType.GLOBAL,
-                "&aGlobal", "{prefix} {player}&7: {message}", -1, null, true));
+                "&aGlobal", "&f{player}&f: {message}", -1, null, true));
         channels.put("local", new Channel("local", ChannelType.LOCAL,
-                "&eLocal", "&7[Local] {prefix} {player}&7: {message}", 100, null, true));
+                "&eLocal", "&8[&eL&8] &f{player}&f: {message}", 100, null, true));
         channels.put("vip", new Channel("vip", ChannelType.VIP,
-                "&6VIP", "&6[VIP] {prefix} {player}&7: {message}", -1, "bellchat.channel.vip", true));
+                "&5VIP", "&8[&5VIP&8] &5{prefix}&5{player}&5:&f {message}", -1, "bellchat.channel.vip", true));
         channels.put("admin", new Channel("admin", ChannelType.ADMIN,
-                "&cAdmin", "&c[Admin] {prefix} {player}&7: {message}", -1, "bellchat.channel.admin", true));
+                "&cAdmin", "&8[&cADM&8] &6{prefix}&6{player}&6:&f {message}", -1, "bellchat.channel.admin", true));
     }
 
     // ── Player ↔ channel ───────────────────────────────────────────────────────
@@ -103,7 +96,6 @@ public class ChannelManager {
         playerChannels.remove(uuid);
     }
 
-    /** Returns the player's current channel. Falls back to global safely. */
     public Channel getPlayerChannel(Player player) {
         String id = playerChannels.getOrDefault(player.getUniqueId(), DEFAULT_CHANNEL);
         Channel ch = channels.get(id);
@@ -113,21 +105,14 @@ public class ChannelManager {
         return ch;
     }
 
-    /**
-     * Switches a player to the given channel.
-     * Fires BellChatChannelSwitchEvent (cancellable).
-     * Sends feedback via MessageManager using existing lang keys.
-     */
     public boolean switchChannel(Player player, String channelId) {
         Channel target = channels.get(channelId.toLowerCase());
         if (target == null) {
-            plugin.getMessageManager().send(player, "channel-not-found",
-                    Map.of("channel", channelId));
+            plugin.getMessageManager().send(player, "channel-not-found", Map.of("channel", channelId));
             return false;
         }
         if (!target.isEnabled()) {
-            plugin.getMessageManager().send(player, "channel-disabled",
-                    Map.of("channel", target.getDisplayName()));
+            plugin.getMessageManager().send(player, "channel-disabled", Map.of("channel", target.getDisplayName()));
             return false;
         }
         if (target.requiresPermission() && !player.hasPermission(target.getRequiredPermission())) {
@@ -140,7 +125,6 @@ public class ChannelManager {
         }
 
         Channel previous = getPlayerChannel(player);
-
         BellChatChannelSwitchEvent event = new BellChatChannelSwitchEvent(player, previous, target);
         Bukkit.getPluginManager().callEvent(event);
         if (event.isCancelled()) return false;
@@ -153,19 +137,11 @@ public class ChannelManager {
 
     // ── Message routing ────────────────────────────────────────────────────────
 
-    /**
-     * Routes a message from player through their current channel.
-     * Called from ChatListener (main thread).
-     * Fires BellChatMessageEvent (cancellable).
-     */
     public boolean routeMessage(Player sender, String rawMessage) {
         Channel channel = getPlayerChannel(sender);
         return routeMessageToChannel(sender, channel, rawMessage);
     }
 
-    /**
-     * Routes a message to a specific channel (for /ch global <msg> one-shot sends).
-     */
     public boolean routeMessageToChannel(Player sender, Channel channel, String rawMessage) {
         BellChatMessageEvent event = new BellChatMessageEvent(sender, channel, rawMessage);
         Bukkit.getPluginManager().callEvent(event);
@@ -209,44 +185,62 @@ public class ChannelManager {
     // ── Format builder ─────────────────────────────────────────────────────────
 
     /**
-     * Builds the final chat string for a channel message.
+     * Buduje finalny string wiadomości dla kanału.
      *
-     * Message text is WHITE (&f) — this is the v2.0 fix.
-     * Channel/prefix/player colors come from the format template.
-     * SPY messages are formatted separately (gray) in MsgSpyManager.
+     * Kolory:
+     *   - {message} jest zawsze BIAŁY (&f) — wymuszony z kodu
+     *   - {prefix} i {player} dziedziczą kolor z formatu (np. &5 dla VIP)
+     *   - prefix z LP może mieć własne kody §x — są stripowane żeby nie
+     *     nadpisywały koloru zdefiniowanego w formacie kanału
+     *
+     * Przykład dla VIP: "&8[&5VIP&8] &5{prefix}&5{player}&5:&f {message}"
+     *   → prefix LP "[VIP] " jest stripowany z §-kodów → "VIP " → malowany &5 z formatu
+     *   → nick gracza "Steve" → malowany &5 z formatu  
+     *   → ": " fioletowe, spacja + wiadomość biała
      */
     private String buildFormat(Player sender, Channel channel, String message) {
-        var lp = plugin.getLuckPermsManager();
-        String prefix      = lp.getPrefix(sender);
-        String suffix      = lp.getSuffix(sender);
-        String group       = lp.getPrimaryGroup(sender);
-        String displayName = sender.getDisplayName();
+        var lp     = plugin.getLuckPermsManager();
+        String group = lp.getPrimaryGroup(sender);
 
-        // Group-specific format override (same logic as old ChatListener)
+        // Pobierz prefix i suffix z LP — null-safe, strip §-kodów
+        // Stripujemy §-kody żeby kolor z formatu (np. &5) faktycznie zadziałał.
+        // Bez stripa: LP daje "§5[VIP] " → §5 nadpisuje &5 z formatu → OK
+        // Ale jeśli LP daje "§f[VIP] " (biały prefix) → §f nadpisuje &5 → nick biały
+        // Dlatego stripujemy §-kody z prefixu i pozwalamy formatowi decydować o kolorze.
+        String prefix = stripSectionCodes(lp.getPrefix(sender));
+        String suffix = stripSectionCodes(lp.getSuffix(sender));
+
+        // Wybór formatu: group-formats (tylko GLOBAL) albo format kanału
         String format = channel.getFormat();
-        var groupFormats = plugin.getConfig().getConfigurationSection("group-formats");
-        if (groupFormats != null && groupFormats.contains(group)) {
-            // Use group format only for GLOBAL channel, others keep their own format
-            if (channel.getType() == ChannelType.GLOBAL) {
+        if (channel.getType() == ChannelType.GLOBAL) {
+            var groupFormats = plugin.getConfig().getConfigurationSection("group-formats");
+            if (groupFormats != null && groupFormats.contains(group)) {
                 format = groupFormats.getString(group, format);
-                // Inject message placeholder if group format uses {message}
-                // Message forced to WHITE below
             }
         }
 
-        // Replace placeholders — message is forced &f (WHITE)
+        // Podmień placeholdery.
+        // {message} → zawsze "&f" + message (biały tekst wiadomości)
         String built = format
                 .replace("{prefix}",      prefix)
                 .replace("{suffix}",      suffix)
                 .replace("{player}",      sender.getName())
-                .replace("{displayname}", displayName)
-                .replace("{channel}",     stripColor(channel.getDisplayName()))
-                .replace("{message}",     "&f" + message);  // WHITE — v2.0 fix
+                .replace("{displayname}", sender.getName())   // displayname = nazwa (bez §-kodów)
+                .replace("{channel}",     stripSectionCodes(stripAmpCodes(channel.getDisplayName())))
+                .replace("{message}",     "&f" + message);
 
         return plugin.getMessageManager().color(built);
     }
 
-    private String stripColor(String s) {
+    /** Usuwa §x kody (już wyrenderowane kolory Minecrafta). */
+    private String stripSectionCodes(String s) {
+        if (s == null) return "";
+        return s.replaceAll("§[0-9a-fk-orA-FK-OR]", "");
+    }
+
+    /** Usuwa &x kody (szablonowe kody kolorów). */
+    private String stripAmpCodes(String s) {
+        if (s == null) return "";
         return s.replaceAll("&[0-9a-fk-orA-FK-OR]", "");
     }
 
@@ -256,7 +250,7 @@ public class ChannelManager {
         String partyId = "party_" + owner.getUniqueId().toString().substring(0, 8);
         Channel party = new Channel(partyId, ChannelType.PARTY,
                 "&b" + owner.getName() + "'s party",
-                "&b[Party] {prefix} {player}&f: {message}",
+                "&8[&bP&8] &f{player}&f: {message}",
                 -1, null, true);
         party.setOwner(owner.getUniqueId());
         channels.put(partyId, party);
@@ -275,6 +269,6 @@ public class ChannelManager {
 
     // ── Read access ────────────────────────────────────────────────────────────
 
-    public Map<String, Channel> getChannels()          { return Collections.unmodifiableMap(channels); }
-    public Optional<Channel> getChannel(String id)     { return Optional.ofNullable(channels.get(id.toLowerCase())); }
+    public Map<String, Channel> getChannels()      { return Collections.unmodifiableMap(channels); }
+    public Optional<Channel> getChannel(String id) { return Optional.ofNullable(channels.get(id.toLowerCase())); }
 }
