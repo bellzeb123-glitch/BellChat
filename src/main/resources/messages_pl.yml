@@ -40,3 +40,11 @@ no-permission: "&cNie masz uprawnień."
 player-only: "&cTej komendy może używać tylko gracz."
 invalid-args: "&cNieprawidłowe argumenty. Użyj &f/bchat help"
 reload-done: "&aKonfiguracja przeładowana."
+
+# ── v2.0: Kanały ──────────────────────────────────────────────────────────────
+channel-not-found: "&cNie znaleziono kanału &f{channel}&c."
+channel-disabled: "&cKanał &f{channel}&c jest wyłączony."
+channel-switched: "&7Przełączono na kanał &f{channel}&7."
+channel-current: "&7Aktualny kanał: &f{channel}&7."
+channel-party-not-member: "&cNie jesteś członkiem tej party."
+channel-party-disbanded: "&cParty została rozwiązana."

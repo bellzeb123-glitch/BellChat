@@ -1,73 +1,96 @@
 name: BellChat
-version: 1.0.0
+version: 2.0.0
 main: pl.bell.bellchat.BellChat
 api-version: '1.21'
 author: bellzeb123-glitch
-description: Full-featured chat plugin with LuckPerms integration.
+description: Full-featured chat plugin with channels, LuckPerms integration.
 
 softdepend:
   - LuckPerms
+  - PlaceholderAPI
 
 commands:
   bellchat:
-    description: BellChat admin panel
-    aliases: [bchat]
-    usage: /<command>
+    description: BellChat admin panel i komendy admina
+    aliases: [bc]
+    usage: /bc [help|gui|reload|mute|unmute|clearchat|chatlock|spy|ch]
+
+  ch:
+    description: Zmień kanał czatu
+    usage: /ch [kanał|list]
+
   msg:
-    description: Send a private message
+    description: Wyślij prywatną wiadomość
     aliases: [tell, w, pm]
-    usage: /<command> <player> <message>
+    usage: /msg <gracz> <wiadomość>
+
   reply:
-    description: Reply to last private message
+    description: Odpowiedz na ostatnią prywatną wiadomość
     aliases: [r]
-    usage: /<command> <message>
-  mute:
-    description: Mute a player
-    usage: /<command> <player> [duration] [reason]
-  unmute:
-    description: Unmute a player
-    usage: /<command> <player>
-  clearchat:
-    description: Clear the chat
-    aliases: [cc]
-    usage: /<command>
-  chatlock:
-    description: Lock or unlock the chat
-    aliases: [cl]
-    usage: /<command>
+    usage: /r <wiadomość>
+
   ignore:
-    description: Ignore or unignore a player
-    usage: /<command> <player>
+    description: Ignoruj lub odignoruj gracza
+    usage: /ignore <gracz>
+
+  # Legacy standalone — wciąż działają bezpośrednio (backwards compat)
+  mute:
+    description: Wycisz gracza
+    usage: /mute <gracz> [czas] [powód]
+
+  unmute:
+    description: Odcisz gracza
+    usage: /unmute <gracz>
+
+  clearchat:
+    description: Wyczyść czat
+    aliases: [cc]
+    usage: /clearchat
+
+  chatlock:
+    description: Zablokuj/odblokuj czat
+    aliases: [cl]
+    usage: /chatlock
+
   msgspy:
-    description: Toggle private message spy mode
+    description: Przełącz tryb spy dla prywatnych wiadomości
     aliases: [spy]
-    usage: /<command>
+    usage: /msgspy
 
 permissions:
   bellchat.admin:
-    description: Full admin access
+    description: Pełny dostęp administracyjny
     default: op
   bellchat.mute:
-    description: Can mute players
+    description: Może wyciszać graczy
     default: op
   bellchat.clearchat:
-    description: Can clear chat
+    description: Może czyścić czat
     default: op
   bellchat.chatlock:
-    description: Can lock/unlock chat
+    description: Może blokować czat
     default: op
   bellchat.chatlock.bypass:
-    description: Can chat even when locked
+    description: Może pisać gdy czat jest zablokowany
     default: op
   bellchat.color:
-    description: Can use color codes in chat
+    description: Może używać kodów kolorów w czacie
     default: false
   bellchat.mention:
-    description: Can be pinged by mentions
+    description: Może być pingowany przez @wzmianki
     default: true
   bellchat.antispam.bypass:
-    description: Bypass antispam cooldown
+    description: Omija antispam
     default: op
   bellchat.spy:
-    description: Can toggle spy mode to see all private messages
+    description: Widzi prywatne wiadomości innych graczy
     default: op
+  bellchat.channel.vip:
+    description: Dostęp do kanału VIP
+    default: false
+  bellchat.channel.admin:
+    description: Dostęp do kanału Admin
+    default: op
+  bellchat.channel.party:
+    description: Może tworzyć i dołączać do party
+    default: true

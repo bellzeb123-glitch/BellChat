@@ -11,6 +11,12 @@ import pl.bell.bellchat.BellChat;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * /msg (/tell /w /pm) — private message.
+ *
+ * v2.0 fix: message text is WHITE (&f) instead of the default gray.
+ * SPY format remains gray — handled in MsgSpyManager.
+ */
 public class MsgCommand implements CommandExecutor, TabCompleter {
 
     private final BellChat plugin;
@@ -22,7 +28,7 @@ public class MsgCommand implements CommandExecutor, TabCompleter {
         var msg = plugin.getMessageManager();
 
         if (!(sender instanceof Player player)) { msg.send(sender, "player-only"); return true; }
-        if (args.length < 2) { sender.sendMessage(msg.getPrefix() + "&cUsage: /msg <player> <message>"); return true; }
+        if (args.length < 2) { sender.sendMessage(msg.getPrefix() + msg.color("&cUżycie: /msg <gracz> <wiadomość>")); return true; }
 
         Player target = Bukkit.getPlayer(args[0]);
         if (target == null || !target.isOnline()) {
@@ -38,23 +44,24 @@ public class MsgCommand implements CommandExecutor, TabCompleter {
         }
 
         String message = String.join(" ", List.of(args).subList(1, args.length));
-        // Get rank colors from LuckPerms
+
+        // v2.0: message text forced WHITE (&f) — sender/receiver name colors from LuckPerms
         String senderColor   = plugin.getLuckPermsManager().getChatColor(player);
         String receiverColor = plugin.getLuckPermsManager().getChatColor(target);
-        String toSender   = msg.get("msg-format-sender")
+
+        // Replace {message} placeholder, then append &f before the actual text
+        String toSender = msg.get("msg-format-sender")
                 .replace("{receiver}", receiverColor + target.getName())
-                .replace("{message}", message);
+                .replace("{message}",  "&f" + message);   // WHITE
         String toReceiver = msg.get("msg-format-receiver")
-                .replace("{sender}", senderColor + player.getName())
-                .replace("{message}", message);
+                .replace("{sender}",  senderColor + player.getName())
+                .replace("{message}", "&f" + message);    // WHITE
 
-        player.sendMessage(toSender);
-        target.sendMessage(toReceiver);
+        player.sendMessage(msg.color(toSender));
+        target.sendMessage(msg.color(toReceiver));
 
-        // Spy + log
         plugin.getMsgSpyManager().handle(player.getName(), target.getName(), message);
 
-        // Set reply targets
         plugin.getChatStateManager().setReplyTarget(player.getUniqueId(), target.getUniqueId());
         plugin.getChatStateManager().setReplyTarget(target.getUniqueId(), player.getUniqueId());
         return true;

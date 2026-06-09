@@ -60,3 +60,33 @@ vip-notification:
 chatlock:
   # Message shown to players when chat is locked
   locked-message: "&cChat is currently locked by an administrator."
+
+# ── v2.0: Kanały ──────────────────────────────────────────────────────────────
+channels:
+  global:
+    type: GLOBAL
+    display-name: "&aGlobal"
+    # {prefix} = LP prefix, {player} = nazwa gracza, {message} = tekst (zawsze BIAŁY)
+    format: "{prefix} {player}&7: {message}"
+    enabled: true
+
+  local:
+    type: LOCAL
+    display-name: "&eLocal"
+    format: "&7[&eL&7] {prefix} {player}&7: {message}"
+    local-radius: 100
+    enabled: true
+
+  vip:
+    type: VIP
+    display-name: "&6VIP"
+    format: "&6[VIP] {prefix} {player}&7: {message}"
+    required-permission: "bellchat.channel.vip"
+    enabled: true
+
+  admin:
+    type: ADMIN
+    display-name: "&cAdmin"
+    format: "&c[Admin] {prefix} {player}&7: {message}"
+    required-permission: "bellchat.channel.admin"
+    enabled: true
