@@ -12,21 +12,26 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import pl.bell.bellchat.BellChat;
 import pl.bell.bellchat.managers.AntispamManager;
+import pl.bell.bellchat.managers.UrlFilterManager;
 
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
  * BellChat v2.0 — main chat listener.
  *
- * Replaces v1.0 ChatListener (deprecated AsyncPlayerChatEvent → AsyncChatEvent).
- *
- * Preserved from v1.0: mute, chatlock, antispam, profanity filter,
- * color codes permission, @mention highlight + sound, ignore list.
- *
- * New in v2.0: routes through ChannelManager; message text forced WHITE.
+ * Pipeline wiadomości (kolejność ważna):
+ *   1. Mute check
+ *   2. Chat lock
+ *   3. Antispam
+ *   4. Profanity filter
+ *   5. URL filter         ← NOWE
+ *   6. Emoji              ← NOWE
+ *   7. Color codes (permission)
+ *   8. Route przez ChannelManager (sync)
+ *   9. Mention sounds
  */
+@SuppressWarnings("UnstableApiUsage")
 public class ChatListener implements Listener {
 
     private static final Pattern MENTION_PATTERN = Pattern.compile("@(\\w{2,16})");
@@ -57,7 +62,7 @@ public class ChatListener implements Listener {
         var antispam = plugin.getAntispamManager();
         var state    = plugin.getChatStateManager();
 
-        // Mute
+        // 1. Mute
         if (mutes.isMuted(player.getUniqueId())) {
             var entry = mutes.getMute(player.getUniqueId());
             if (entry.isPermanent()) {
@@ -68,17 +73,18 @@ public class ChatListener implements Listener {
             return;
         }
 
-        // Chat lock
+        // 2. Chat lock
         if (state.isChatLocked() && !player.hasPermission("bellchat.chatlock.bypass")) {
             msg.send(player, "chatlock-blocked");
             return;
         }
 
-        // Antispam
+        // 3. Antispam
         if (!player.hasPermission("bellchat.antispam.bypass")) {
             AntispamManager.SpamResult result = antispam.check(player.getUniqueId(), message);
             if (result == AntispamManager.SpamResult.COOLDOWN) {
-                msg.send(player, "antispam-cooldown", Map.of("seconds", String.valueOf(antispam.getCooldownSeconds())));
+                msg.send(player, "antispam-cooldown",
+                        Map.of("seconds", String.valueOf(antispam.getCooldownSeconds())));
                 return;
             }
             if (result == AntispamManager.SpamResult.DUPLICATE) {
@@ -87,21 +93,38 @@ public class ChatListener implements Listener {
             }
         }
 
-        // Profanity filter
+        // 4. Profanity filter
         message = applyProfanityFilter(message);
 
-        // Color codes
+        // 5. URL filter
+        if (!player.hasPermission("bellchat.url.bypass")) {
+            UrlFilterManager.Result urlResult = plugin.getUrlFilterManager().process(message);
+            if (urlResult.blocked()) {
+                msg.send(player, "url-blocked");
+                return;
+            }
+            message = urlResult.message();
+        }
+
+        // 6. Emoji (tylko gdy gracz ma uprawnienie bellchat.emoji)
+        if (player.hasPermission("bellchat.emoji")) {
+            message = plugin.getEmojiManager().process(message);
+        }
+
+        // 7. Color codes
         if (player.hasPermission("bellchat.color")) {
             message = msg.color(message);
         }
 
-        // Route on main thread (LuckPerms + events need sync context)
+        // 8. Route na main thread (LuckPerms + eventy wymagają sync)
         final String finalMessage = message;
         Bukkit.getScheduler().runTask(plugin, () -> {
             plugin.getChannelManager().routeMessage(player, finalMessage);
             processMentions(player, finalMessage);
         });
     }
+
+    // ── Mention sounds ────────────────────────────────────────
 
     private void processMentions(Player sender, String message) {
         if (!plugin.getConfig().getBoolean("mention.enabled", true)) return;
@@ -117,12 +140,15 @@ public class ChatListener implements Listener {
 
     private void playMentionSound(Player player) {
         try {
-            Sound sound = Sound.valueOf(plugin.getConfig().getString("mention.sound", "ENTITY_EXPERIENCE_ORB_PICKUP"));
+            Sound sound = Sound.valueOf(
+                    plugin.getConfig().getString("mention.sound", "ENTITY_EXPERIENCE_ORB_PICKUP"));
             player.playSound(player.getLocation(), sound, 1f, 1f);
         } catch (IllegalArgumentException e) {
             plugin.getLogger().warning("Invalid mention sound: " + e.getMessage());
         }
     }
+
+    // ── Profanity filter ──────────────────────────────────────
 
     private String applyProfanityFilter(String message) {
         var cfg = plugin.getConfig().getConfigurationSection("profanity-filter");

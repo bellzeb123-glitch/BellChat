@@ -1,19 +1,12 @@
 # ============================================================
-#  BellChat v2.0 - Configuration
+#  BellChat v2.1 - Configuration
 # ============================================================
 
 language: "pl"
 
-# ── Chat Format (fallback dla gracza bez grupy w LP) ──────────
+# ── Chat Format ───────────────────────────────────────────────
 chat-format: "&f{player}&f: {message}"
 
-# Formaty per-grupa LuckPerms.
-# {prefix} = prefix z LP (§-kody stripowane, kolor z formatu decyduje)
-# {player} = czysta nazwa gracza
-# {message} = zawsze biały (&f) — wymuszony z kodu, nie pisz tu koloru
-#
-# WAŻNE dla VIP: &5 przed {prefix} I przed {player} sprawia że
-# CAŁY nick (prefix + nazwa) jest fioletowy. Wiadomość zostaje biała.
 group-formats:
   default: "&f{player}&f: {message}"
   vip:     "&5{prefix}&5{player}&5:&f {message}"
@@ -43,6 +36,20 @@ profanity-filter:
     - "badword1"
     - "badword2"
 
+# ── URL Filter ────────────────────────────────────────────────
+# Blokuje lub zamienia linki w chacie.
+# Bypass: bellchat.url.bypass (domyślnie: op)
+url-filter:
+  enabled: false
+  # block  = odrzuca całą wiadomość zawierającą link
+  # replace = zamienia link na tekst z 'replacement'
+  mode: "block"
+  replacement: "&8[&clink&8]"
+  # Domeny/frazy które są DOZWOLONE (gracz może pisać te linki)
+  whitelist:
+    - "twojserwer.pl"
+    # - "discord.gg/twojlink"
+
 # ── VIP Rank Notification ─────────────────────────────────────
 vip-notification:
   enabled: true
@@ -53,15 +60,32 @@ vip-notification:
 chatlock:
   locked-message: "&cChat jest aktualnie zablokowany."
 
+# ── Auto-Broadcasts ───────────────────────────────────────────
+# Cykliczne wiadomości wysyłane na cały serwer.
+# Każdy slot = osobny timer, własna lista wiadomości.
+# random: false = kolejno (1→2→3→1→...), true = losowo
+broadcasts:
+  enabled: false
+  slots:
+    slot1:
+      enabled: true
+      interval-seconds: 300
+      random: false
+      messages:
+        - "&8[&6Bell&8] &fZapraszamy na nasz serwer Discord!"
+        - "&8[&6Bell&8] &fSprawdź sklep: &e/bm"
+    slot2:
+      enabled: false
+      interval-seconds: 600
+      random: true
+      messages:
+        - "&8[&6Bell&8] &fDołącz do VIP aby odblokować ekskluzywne funkcje!"
+
 # ── v2.0: Kanały ──────────────────────────────────────────────
-# Placeholdery: {prefix} {player} {message} {channel}
-# {message} zawsze biały z kodu — nie dodawaj &f przy {message}
-# {prefix} — §-kody stripowane, kolor z formatu decyduje
 channels:
   global:
     type: GLOBAL
     display-name: "&aGlobal"
-    # Global używa group-formats — ten format to fallback
     format: "&f{player}&f: {message}"
     enabled: true
 
@@ -75,8 +99,6 @@ channels:
   vip:
     type: VIP
     display-name: "&5VIP"
-    # &5 przed {prefix} i {player} → fioletowy prefix LP + fioletowy nick
-    # &f przed {message} → biała wiadomość (kod też to wymusza, dla pewności)
     format: "&8[&5VIP&8] &5{prefix}&5{player}&5:&f {message}"
     required-permission: "bellchat.channel.vip"
     enabled: true

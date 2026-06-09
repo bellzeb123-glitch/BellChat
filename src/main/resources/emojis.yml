@@ -1,0 +1,60 @@
+# ============================================================
+#  BellChat - Emoji Configuration
+# ============================================================
+# Wpisz shortcode: 'emoji' aby dodać własne.
+# Shortcody są case-sensitive: :smile: ≠ :Smile:
+# Wyłącz cały system: enabled: false
+# Uprawnienie do używania: bellchat.emoji (domyślnie: true dla graczy)
+
+enabled: true
+
+emojis:
+  # ── Twarze ──────────────────────────────────────────────
+  smile:      "😊"
+  laugh:      "😂"
+  wink:       "😉"
+  cool:       "😎"
+  cry:        "😢"
+  angry:      "😡"
+  shock:      "😱"
+  think:      "🤔"
+  shush:      "🤫"
+  nerd:       "🤓"
+
+  # ── Gesty ───────────────────────────────────────────────
+  thumbsup:   "👍"
+  thumbsdown: "👎"
+  wave:       "👋"
+  clap:       "👏"
+  fist:       "✊"
+  eyes:       "👀"
+  brain:      "🧠"
+  muscle:     "💪"
+
+  # ── Symbole ─────────────────────────────────────────────
+  heart:      "❤"
+  star:       "⭐"
+  fire:       "🔥"
+  check:      "✅"
+  x:          "❌"
+  warning:    "⚠"
+  question:   "❓"
+  exclaim:    "❗"
+  bell:       "🔔"
+  lightning:  "⚡"
+  snowflake:  "❄"
+  sun:        "☀"
+  moon:       "🌙"
+  rocket:     "🚀"
+
+  # ── Gaming / MC ─────────────────────────────────────────
+  sword:      "⚔"
+  shield:     "🛡"
+  crown:      "👑"
+  gem:        "💎"
+  money:      "💰"
+  skull:      "💀"
+  trophy:     "🏆"
+  gift:       "🎁"
+  boom:       "💥"
+  gg:         "🎮"
