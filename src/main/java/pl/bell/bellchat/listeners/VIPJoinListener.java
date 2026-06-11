@@ -47,8 +47,8 @@ public class VIPJoinListener implements Listener {
 
         // ── 1. Nadpisz domyślny join message (czysty nick, bez LP prefix) ──
         String joinMsg = isPl
-                ? "§e✦ §f" + player.getName() + " §7dołączył do gry. §e✦"
-                : "§e✦ §f" + player.getName() + " §7joined the game. §e✦";
+                ? "§6✦ §e" + player.getName() + " §6dołączył do gry. §6✦"
+                : "§6✦ §e" + player.getName() + " §6joined the game. §6✦";
 
         event.joinMessage(LegacyComponentSerializer.legacySection()
                 .deserialize(joinMsg));
