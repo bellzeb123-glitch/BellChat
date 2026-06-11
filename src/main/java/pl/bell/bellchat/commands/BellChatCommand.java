@@ -54,20 +54,20 @@ public class BellChatCommand implements CommandExecutor, TabCompleter {
                 if (!sender.hasPermission("bellchat.admin")) { msg.send(sender, "no-permission"); yield true; }
                 if (args.length < 2) {
                     sender.sendMessage(plugin.getMessageManager().getPrefix()
-                            + "§cUżycie: §f/bc lang <en|pl>");
+                            + "§cUsage: §f/bch lang <en|pl>");
                     yield true;
                 }
                 String lang = args[1].toLowerCase();
                 if (!lang.equals("en") && !lang.equals("pl")) {
                     sender.sendMessage(plugin.getMessageManager().getPrefix()
-                            + "§cDostępne języki: §fen§c, §fpl");
+                            + "§cAvailable languages: §fen§c, §fpl");
                     yield true;
                 }
                 plugin.getConfig().set("language", lang);
                 plugin.saveConfig();
                 plugin.reload();
                 sender.sendMessage(plugin.getMessageManager().getPrefix()
-                        + "§7Język zmieniony na: §f" + lang.toUpperCase());
+                        + "§7Language changed to: §f" + lang.toUpperCase());
                 yield true;
             }
 
@@ -113,10 +113,10 @@ public class BellChatCommand implements CommandExecutor, TabCompleter {
 
     private void sendHelp(CommandSender sender) {
         sender.sendMessage("§6=== BellChat v2 ===");
-        sender.sendMessage("§7/msg §f<gracz> <wiad.> §8— §7Prywatna wiadomość");
-        sender.sendMessage("§7/r §f<wiad.> §8— §7Odpowiedź na PM");
-        sender.sendMessage("§7/ignore §f<gracz> §8— §7Ignoruj/odignoruj");
-        sender.sendMessage("§7/ch §f[kanał] §8— §7Zmień kanał czatu");
+        sender.sendMessage("§7/msg §f<player> <msg> §8— §7Private message");
+        sender.sendMessage("§7/r §f<msg> §8— §7Reply to PM");
+        sender.sendMessage("§7/ignore §f<player> §8— §7Ignore/unignore");
+        sender.sendMessage("§7/ch §f[channel] §8— §7Switch channel");
         if (sender.hasPermission("bellchat.admin")) {
             sender.sendMessage("§8--- §6Admin §8---");
             sender.sendMessage("§7/bc gui §8— §7Panel admina (GUI)");
@@ -132,10 +132,10 @@ public class BellChatCommand implements CommandExecutor, TabCompleter {
     }
 
     private void sendChannelOverview(CommandSender sender) {
-        sender.sendMessage("§6Aktywne kanały:");
+        sender.sendMessage("§6Active channels:");
         plugin.getChannelManager().getChannels().forEach((id, ch) ->
                 sender.sendMessage("  §7" + id + " §8| §f" + ch.getType().name()
-                        + " §8| " + (ch.isEnabled() ? "§aaktywny" : "§cwył.")));
+                        + " §8| " + (ch.isEnabled() ? "§aactive" : "§cdisabled")));
     }
 
     private String[] dropFirst(String[] args) {

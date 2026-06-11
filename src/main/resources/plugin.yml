@@ -11,88 +11,88 @@ softdepend:
 
 commands:
   bellchat:
-    description: BellChat admin panel i komendy admina
-    aliases: [bc]
-    usage: /bc [help|gui|reload|mute|unmute|clearchat|chatlock|spy|ch]
+    description: BellChat admin panel and commands
+    aliases: [bch]
+    usage: /bch [help|gui|reload|mute|unmute|clearchat|chatlock|spy|ch|lang]
   ch:
-    description: Zmien kanal czatu
+    description: Switch chat channel
     usage: /ch [kanal|list]
   msg:
-    description: Wyslij prywatna wiadomosc
+    description: Send a private message
     aliases: [tell, w, pm]
-    usage: /msg <gracz> <wiadomosc>
+    usage: /msg <player> <message>
   reply:
-    description: Odpowiedz na ostatnia PM
+    description: Reply to last private message
     aliases: [r]
-    usage: /r <wiadomosc>
+    usage: /r <message>
   ignore:
-    description: Ignoruj lub odignoruj gracza
-    usage: /ignore <gracz>
+    description: Ignore or unignore a player
+    usage: /ignore <player>
   mute:
-    description: Wycisz gracza
-    usage: /mute <gracz> [czas] [powod]
+    description: Mute a player
+    usage: /mute <player> [duration] [reason]
   unmute:
-    description: Odcisz gracza
-    usage: /unmute <gracz>
+    description: Unmute a player
+    usage: /unmute <player>
   clearchat:
-    description: Wyczysc chat
+    description: Clear the chat
     aliases: [cc]
     usage: /clearchat
   chatlock:
-    description: Zablokuj lub odblokuj chat
+    description: Lock or unlock the chat
     aliases: [cl]
     usage: /chatlock
   msgspy:
-    description: Toggle spy na prywatne wiadomosci
+    description: Toggle private message spy
     aliases: [spy]
     usage: /msgspy
 
 permissions:
   bellchat.admin:
-    description: Pelny dostep admina
+    description: Full admin access
     default: op
   bellchat.mute:
-    description: Moze wyciszac graczy
+    description: Can mute players
     default: op
   bellchat.clearchat:
-    description: Moze czyscic chat
+    description: Can clear chat
     default: op
   bellchat.chatlock:
-    description: Moze blokowac chat
+    description: Can lock chat
     default: op
   bellchat.chatlock.bypass:
-    description: Moze pisac gdy chat zablokowany
+    description: Can chat when locked
     default: op
   bellchat.color:
-    description: Moze uzywac kodow kolorow w chacie
+    description: Can use color codes in chat
     default: false
   bellchat.mention:
-    description: Moze byc pingowany przez wzmiankę
+    description: Can be pinged by mentions
     default: true
   bellchat.antispam.bypass:
-    description: Omija antispam
+    description: Bypasses antispam
     default: op
   bellchat.spy:
-    description: Widzi wszystkie prywatne wiadomosci
+    description: Can see all private messages
     default: op
   bellchat.url.bypass:
-    description: Moze wysylac linki
+    description: Can send links
     default: op
   bellchat.emoji:
-    description: Moze uzywac emoji w chacie
+    description: Can use emoji in chat
     default: true
   bellchat.channel.global:
-    description: Dostep do kanalu Global
+    description: Access to Global channel
     default: true
   bellchat.channel.local:
-    description: Dostep do kanalu Local
+    description: Access to Local channel
     default: true
   bellchat.channel.party:
-    description: Dostep do kanalu Party
+    description: Access to Party channel
     default: true
   bellchat.channel.vip:
-    description: Dostep do kanalu VIP
+    description: Access to VIP channel
     default: false
   bellchat.channel.admin:
-    description: Dostep do kanalu Admin
+    description: Access to Admin channel
     default: op

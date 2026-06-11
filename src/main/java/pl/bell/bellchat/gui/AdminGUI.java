@@ -58,32 +58,32 @@ public class AdminGUI implements Listener {
                 getConfigBool("profanity-filter.enabled", false)));
         inv.setItem(2, makeToggle(Material.BELL,         "VIP Notification",
                 getConfigBool("vip-notification.enabled", true),
-                "Ogłasza na czacie gdy gracz",
-                "z grupy VIP dołącza do serwera."));
+                "Broadcasts when a player",
+                "with VIP rank joins the server."));
         inv.setItem(3, makeChatLockButton(plugin.getChatStateManager().isChatLocked()));
 
         // Rząd 2 — funkcje v2.x
         inv.setItem(9,  makeToggle(Material.CHAIN,     "URL Filter",
                 getConfigBool("url-filter.enabled", false),
-                "Blokuje linki w chacie.",
-                "Gracze z bellchat.url.bypass",
-                "są pomijani."));
+                "Blocks links in chat.",
+                "Players with bellchat.url.bypass",
+                "are bypassed."));
         inv.setItem(10, makeToggle(Material.LIME_DYE,  "Emoji",
                 plugin.getEmojiManager().isEnabled(),
-                "Zamienia :smile: na emoji.",
-                "Wymaga uprawnienia:",
+                "Replaces :smile: with emoji.",
+                "Requires permission:",
                 "bellchat.emoji"));
         inv.setItem(11, makeToggle(Material.CLOCK,     "Auto-Broadcasts",
                 getConfigBool("broadcasts.enabled", false),
-                "Cykliczne wiadomości",
-                "na cały serwer."));
+                "Cyclic broadcast messages",
+                "to all players."));
         inv.setItem(12, makeToggle(Material.NAME_TAG,  "Hover/Click Nick",
                 getConfigBool("chat.hover-click.enabled", true),
-                "Kliknięcie na nick gracza",
-                "otwiera /msg <nick>."));
+                "Click on a player name",
+                "to open /msg <name>."));
         inv.setItem(13, makeToggle(Material.COMPARATOR, "Blokuj duplikaty",
                 getConfigBool("antispam.block-duplicate", true),
-                "Blokuje wysłanie tej samej",
+                "Blocks sending the same",
                 "wiadomości dwa razy."));
 
         // Filler
@@ -92,11 +92,11 @@ public class AdminGUI implements Listener {
 
         // Pasek dolny
         inv.setItem(45, makeItem(Material.ENDER_PEARL,
-                "§b§lKanały", List.of("§7Podgląd kanałów", "§7i liczby graczy")));
+                "§b§lChannels", List.of("§7View channels", "§7and player counts")));
         inv.setItem(46, makeItem(Material.BARRIER,
-                "§c§lWyciszeni", List.of("§7Zarządzaj wyciszonymi")));
+                "§c§lMuted", List.of("§7Manage muted players")));
         inv.setItem(53, makeItem(Material.ARROW,
-                "§e§lReload", List.of("§7Przeładuj konfigurację")));
+                "§e§lReload", List.of("§7Reload configuration")));
 
         admin.openInventory(inv);
     }
@@ -113,8 +113,8 @@ public class AdminGUI implements Listener {
         for (int i = 45; i < 54; i++) inv.setItem(i, filler);
 
         inv.setItem(4, makeItem(Material.COMPASS,
-                "§6§lKanały czatu", List.of("§7Aktywne kanały i gracze online")));
-        inv.setItem(45, makeItem(Material.ARROW, "§f§l← Powrót", List.of("§7Wróć do Settings")));
+                "§6§lChat Channels", List.of("§7Active channels and online players")));
+        inv.setItem(45, makeItem(Material.ARROW, "§f§l← Back", List.of("§7Return to Settings")));
 
         int slot = 10;
         for (Channel ch : plugin.getChannelManager().getChannels().values()) {
@@ -126,16 +126,16 @@ public class AdminGUI implements Listener {
                     .count();
 
             String perm = ch.getRequiredPermission() != null
-                    ? "§7Uprawnienie: §f" + ch.getRequiredPermission()
-                    : "§7Dostępny dla wszystkich";
+                    ? "§7Permission: §f" + ch.getRequiredPermission()
+                    : "§7Open to all players";
 
             List<String> lore = new ArrayList<>();
-            lore.add("§8Typ: §7" + ch.getType().name());
-            lore.add("§8Graczy: §f" + count);
+            lore.add("§8Type: §7" + ch.getType().name());
+            lore.add("§8Players: §f" + count);
             lore.add(perm);
             if (ch.getType().name().equals("LOCAL"))
-                lore.add("§7Promień: §f" + ch.getLocalRadius() + " bloków");
-            lore.add(ch.isEnabled() ? "§aWłączony" : "§cWyłączony");
+                lore.add("§7Radius: §f" + ch.getLocalRadius() + " blocks");
+            lore.add(ch.isEnabled() ? "§aEnabled" : "§cDisabled");
 
             Material mat = switch (ch.getType()) {
                 case GLOBAL -> Material.GRASS_BLOCK;
@@ -172,19 +172,19 @@ public class AdminGUI implements Listener {
         for (int i = 0; i < 9; i++) inv.setItem(i, filler);
         for (int i = 45; i < 54; i++) inv.setItem(i, filler);
 
-        inv.setItem(4, makeItem(Material.BARRIER, "§c§lWyciszeni gracze",
-                List.of("§7Łącznie: §f" + total,
-                        "§7Strona: §f" + (page + 1) + "/" + pages,
-                        "§cPrawy klik = odcisz")));
+        inv.setItem(4, makeItem(Material.BARRIER, "§c§lMuted Players",
+                List.of("§7Total: §f" + total,
+                        "§7Page: §f" + (page + 1) + "/" + pages,
+                        "§cRight-click = unmute")));
 
-        inv.setItem(45, makeItem(Material.ARROW, "§f§l← Powrót", List.of("§7Wróć do Settings")));
+        inv.setItem(45, makeItem(Material.ARROW, "§f§l← Back", List.of("§7Return to Settings")));
 
         if (page > 0)
-            inv.setItem(48, makeItem(Material.ARROW, "§f§l← Poprzednia",
-                    List.of("§7Strona " + page)));
+            inv.setItem(48, makeItem(Material.ARROW, "§f§l← Previous",
+                    List.of("§7Page " + page)));
         if (page < pages - 1)
-            inv.setItem(50, makeItem(Material.ARROW, "§f§lNastępna →",
-                    List.of("§7Strona " + (page + 2))));
+            inv.setItem(50, makeItem(Material.ARROW, "§f§lNext →",
+                    List.of("§7Page " + (page + 2))));
 
         int start = page * perPage;
         int end   = Math.min(start + perPage, total);
@@ -241,7 +241,7 @@ public class AdminGUI implements Listener {
                 // Emoji — zapisuje do emojis.yml przez EmojiManager
                 plugin.getEmojiManager().setEnabled(!plugin.getEmojiManager().isEnabled());
                 admin.sendMessage(plugin.getMessageManager().getPrefix()
-                        + "§fEmoji " + (plugin.getEmojiManager().isEnabled() ? "§awłączone" : "§cwłączone") + "§7.");
+                        + "§fEmoji " + (plugin.getEmojiManager().isEnabled() ? "§aenabled" : "§cdisabled") + "§7.");
                 Bukkit.getScheduler().runTask(plugin, () -> openSettings(admin));
             }
             case 11 -> doToggle(admin, "broadcasts.enabled",            "Auto-Broadcasts");
@@ -271,7 +271,7 @@ public class AdminGUI implements Listener {
             if (item != null && item.hasItemMeta()) {
                 List<String> lore = item.getItemMeta().getLore();
                 if (lore != null && !lore.isEmpty()) {
-                    String s = lore.get(0).replaceAll("§.", "").replace("Strona ", "").trim();
+                    String s = lore.get(0).replaceAll("§.", "").replace("Page ", "").trim();
                     try {
                         int pg = Integer.parseInt(s) - 1;
                         Bukkit.getScheduler().runTask(plugin, () -> openMuted(admin, pg));
@@ -292,7 +292,7 @@ public class AdminGUI implements Listener {
 
         plugin.getMuteManager().unmute(target.getUniqueId());
         admin.sendMessage(plugin.getMessageManager().getPrefix()
-                + "§aOdciszono gracza §f" + target.getName() + "§a.");
+                + "§aUnmuted player §f" + target.getName() + "§a.");
         if (target.getPlayer() != null)
             plugin.getMessageManager().send(target.getPlayer(), "unmute-success",
                     Map.of("player", target.getName()));
@@ -321,7 +321,7 @@ public class AdminGUI implements Listener {
         reloadRelevantManager(key);
 
         admin.sendMessage(plugin.getMessageManager().getPrefix()
-                + "§f" + label + " " + (next ? "§awłączony" : "§cwłączony") + "§7.");
+                + "§f" + label + " " + (next ? "§aenabled" : "§cdisabled") + "§7.");
 
         Bukkit.getScheduler().runTask(plugin, () -> openSettings(admin));
     }
@@ -345,11 +345,11 @@ public class AdminGUI implements Listener {
 
     private ItemStack makeToggle(Material mat, String name, boolean enabled, String... desc) {
         List<String> lore = new ArrayList<>();
-        lore.add(enabled ? "§aWłączony §a✔" : "§cWyłączony §c✘");
+        lore.add(enabled ? "§aEnabled §a✔" : "§cDisabled §c✘");
         lore.add("§8──────────────");
         for (String d : desc) lore.add("§7" + d);
         if (desc.length > 0) lore.add("§8──────────────");
-        lore.add("§7Kliknij aby przełączyć");
+        lore.add("§7Click to toggle");
         return makeItem(mat, "§f" + name, lore);
     }
 
@@ -358,13 +358,13 @@ public class AdminGUI implements Listener {
                 locked ? Material.BARRIER : Material.GREEN_STAINED_GLASS_PANE,
                 "§fChat Lock",
                 List.of(
-                        locked ? "§cZablokowany §c✘" : "§aOdblokowany §a✔",
+                        locked ? "§cLocked §c✘" : "§aUnlocked §a✔",
                         "§8──────────────",
-                        "§7Blokuje pisanie na chacie",
+                        "§7Blocks chatting for players",
                         "§7dla graczy bez uprawnienia",
                         "§7bellchat.chatlock.bypass",
                         "§8──────────────",
-                        "§7Kliknij aby przełączyć"
+                        "§7Click to toggle"
                 ));
     }
 
@@ -376,12 +376,12 @@ public class AdminGUI implements Listener {
             meta.setDisplayName("§c" + (op.getName() != null
                     ? op.getName() : entry.getPlayerUUID().toString()));
             meta.setLore(List.of(
-                    "§7Przez: §f" + entry.getMutedBy(),
-                    "§7Powód: §f" + entry.getReason(),
-                    "§7Wygasa: §f" + (entry.isPermanent()
-                            ? "nigdy" : entry.getFormattedRemaining()),
+                    "§7By: §f" + entry.getMutedBy(),
+                    "§7Reason: §f" + entry.getReason(),
+                    "§7Expires: §f" + (entry.isPermanent()
+                            ? "never" : entry.getFormattedRemaining()),
                     "§8──────────────",
-                    "§cPrawy klik = odcisz"
+                    "§cRight-click = unmute"
             ));
             skull.setItemMeta(meta);
         }
