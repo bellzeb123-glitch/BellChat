@@ -1,5 +1,5 @@
 # ============================================================
-#  BellChat v2.1 - Configuration
+#  BellChat v2.2 - Configuration
 # ============================================================
 
 language: "pl"
@@ -11,6 +11,21 @@ group-formats:
   default: "&f{player}&f: {message}"
   vip:     "&5{prefix}&5{player}&5:&f {message}"
   admin:   "&6{prefix}&6{player}&6:&f {message}"
+
+# ── Hover + Click na nicku ────────────────────────────────────
+# Gdy enabled: true, kliknięcie na nick otwiera /msg <gracz>
+# Najechanie pokazuje rangę gracza i podpowiedź
+chat:
+  hover-click:
+    enabled: true
+    # Co pokazuje hover (najechanie na nick)
+    # Placeholder: {rank} = nazwa grupy LP (np. "Vip", "Admin", "Default")
+    hover-line1: "&7✦ Ranga: &f{rank}"
+    hover-line2: "&7⚔ &7Kliknij aby napisać"
+    separator:   "&8──────────────"
+    # Komenda wykonywana przy kliknięciu (suggest = gracz musi dopisać treść)
+    # Placeholder: {player} = nazwa gracza
+    click-command: "/msg {player} "
 
 # ── Private Messages ──────────────────────────────────────────
 msg-format-sender:   "&9[PRIV] &fTy &9→ &f{receiver}&9: &f{message}"
@@ -37,18 +52,12 @@ profanity-filter:
     - "badword2"
 
 # ── URL Filter ────────────────────────────────────────────────
-# Blokuje lub zamienia linki w chacie.
-# Bypass: bellchat.url.bypass (domyślnie: op)
 url-filter:
   enabled: false
-  # block  = odrzuca całą wiadomość zawierającą link
-  # replace = zamienia link na tekst z 'replacement'
   mode: "block"
   replacement: "&8[&clink&8]"
-  # Domeny/frazy które są DOZWOLONE (gracz może pisać te linki)
   whitelist:
     - "twojserwer.pl"
-    # - "discord.gg/twojlink"
 
 # ── VIP Rank Notification ─────────────────────────────────────
 vip-notification:
@@ -61,9 +70,6 @@ chatlock:
   locked-message: "&cChat jest aktualnie zablokowany."
 
 # ── Auto-Broadcasts ───────────────────────────────────────────
-# Cykliczne wiadomości wysyłane na cały serwer.
-# Każdy slot = osobny timer, własna lista wiadomości.
-# random: false = kolejno (1→2→3→1→...), true = losowo
 broadcasts:
   enabled: false
   slots:

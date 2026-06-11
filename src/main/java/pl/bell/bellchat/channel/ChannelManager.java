@@ -1,5 +1,11 @@
 package pl.bell.bellchat.channel;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
@@ -11,10 +17,16 @@ import pl.bell.bellchat.event.BellChatMessageEvent;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ChannelManager {
 
     private static final String DEFAULT_CHANNEL = "global";
+
+    // Regex do wyodrębnienia {player} lub {displayname} z formatu
+    // Używamy go żeby wiedzieć gdzie wstawić klikalny komponent nicka
+    private static final Pattern PLAYER_PLACEHOLDER = Pattern.compile("\\{player}|\\{displayname}");
 
     private final BellChat plugin;
     private final Logger log;
@@ -24,7 +36,7 @@ public class ChannelManager {
 
     public ChannelManager(BellChat plugin) {
         this.plugin = plugin;
-        this.log = plugin.getLogger();
+        this.log    = plugin.getLogger();
     }
 
     // ── Load / reload ──────────────────────────────────────────────────────────
@@ -63,7 +75,7 @@ public class ChannelManager {
         }
 
         if (channels.isEmpty()) {
-            log.warning("[ChannelManager] Brak kanałów po załadowaniu — ładuję domyślne.");
+            log.warning("[ChannelManager] Brak kanałów — ładuję domyślne.");
             loadDefaults();
         } else {
             log.info("[ChannelManager] Załadowano kanały: " + channels.keySet());
@@ -138,8 +150,7 @@ public class ChannelManager {
     // ── Message routing ────────────────────────────────────────────────────────
 
     public boolean routeMessage(Player sender, String rawMessage) {
-        Channel channel = getPlayerChannel(sender);
-        return routeMessageToChannel(sender, channel, rawMessage);
+        return routeMessageToChannel(sender, getPlayerChannel(sender), rawMessage);
     }
 
     public boolean routeMessageToChannel(Player sender, Channel channel, String rawMessage) {
@@ -148,7 +159,9 @@ public class ChannelManager {
         if (event.isCancelled()) return false;
 
         String message = event.getMessage();
-        String formatted = buildFormat(sender, channel, message);
+
+        // Buduj Component z hover/click na nicku
+        Component formatted = buildComponent(sender, channel, message);
 
         for (Player recipient : resolveRecipients(sender, channel)) {
             if (plugin.getIgnoreManager().isIgnoring(recipient.getUniqueId(), sender.getUniqueId())) continue;
@@ -182,35 +195,28 @@ public class ChannelManager {
         };
     }
 
-    // ── Format builder ─────────────────────────────────────────────────────────
+    // ── Component builder (hover + click) ──────────────────────────────────────
 
     /**
-     * Buduje finalny string wiadomości dla kanału.
+     * Buduje Adventure Component dla wiadomości czatowej.
      *
-     * Kolory:
-     *   - {message} jest zawsze BIAŁY (&f) — wymuszony z kodu
-     *   - {prefix} i {player} dziedziczą kolor z formatu (np. &5 dla VIP)
-     *   - prefix z LP może mieć własne kody §x — są stripowane żeby nie
-     *     nadpisywały koloru zdefiniowanego w formacie kanału
+     * Jeśli hover-click włączony w config (chat.hover-click.enabled: true):
+     *   - Nick gracza → klikalny komponent z hover (ranga + podpowiedź)
+     *   - Klik lewym przyciskiem → sugeruje /msg <nick>
      *
-     * Przykład dla VIP: "&8[&5VIP&8] &5{prefix}&5{player}&5:&f {message}"
-     *   → prefix LP "[VIP] " jest stripowany z §-kodów → "VIP " → malowany &5 z formatu
-     *   → nick gracza "Steve" → malowany &5 z formatu  
-     *   → ": " fioletowe, spacja + wiadomość biała
+     * Jeśli wyłączony → zwraca zwykły legacy string jako Component.
+     *
+     * Podział formatu:
+     *   "PRZED {player} PO {message}"
+     *   → Component: [PRZED][NICK_Z_HOVER][PO][WIADOMOŚĆ]
      */
-    private String buildFormat(Player sender, Channel channel, String message) {
+    private Component buildComponent(Player sender, Channel channel, String message) {
         var lp     = plugin.getLuckPermsManager();
-        String group = lp.getPrimaryGroup(sender);
+        String prefix  = stripSectionCodes(lp.getPrefix(sender));
+        String suffix  = stripSectionCodes(lp.getSuffix(sender));
+        String group   = lp.getPrimaryGroup(sender);
 
-        // Pobierz prefix i suffix z LP — null-safe, strip §-kodów
-        // Stripujemy §-kody żeby kolor z formatu (np. &5) faktycznie zadziałał.
-        // Bez stripa: LP daje "§5[VIP] " → §5 nadpisuje &5 z formatu → OK
-        // Ale jeśli LP daje "§f[VIP] " (biały prefix) → §f nadpisuje &5 → nick biały
-        // Dlatego stripujemy §-kody z prefixu i pozwalamy formatowi decydować o kolorze.
-        String prefix = stripSectionCodes(lp.getPrefix(sender));
-        String suffix = stripSectionCodes(lp.getSuffix(sender));
-
-        // Wybór formatu: group-formats (tylko GLOBAL) albo format kanału
+        // Wybór formatu (group-formats tylko dla GLOBAL)
         String format = channel.getFormat();
         if (channel.getType() == ChannelType.GLOBAL) {
             var groupFormats = plugin.getConfig().getConfigurationSection("group-formats");
@@ -219,26 +225,136 @@ public class ChannelManager {
             }
         }
 
-        // Podmień placeholdery.
-        // {message} → zawsze "&f" + message (biały tekst wiadomości)
-        String built = format
-                .replace("{prefix}",      prefix)
-                .replace("{suffix}",      suffix)
-                .replace("{player}",      sender.getName())
-                .replace("{displayname}", sender.getName())   // displayname = nazwa (bez §-kodów)
-                .replace("{channel}",     stripSectionCodes(stripAmpCodes(channel.getDisplayName())))
-                .replace("{message}",     "&f" + message);
+        // Podmień wszystkie placeholdery OPRÓCZ {player}/{displayname}
+        String withPlaceholders = format
+                .replace("{prefix}",  prefix)
+                .replace("{suffix}",  suffix)
+                .replace("{channel}", stripSectionCodes(stripAmpCodes(channel.getDisplayName())))
+                .replace("{message}", "&f" + message);
 
-        return plugin.getMessageManager().color(built);
+        // Sprawdź czy hover/click jest włączony
+        boolean hoverEnabled = plugin.getConfig().getBoolean("chat.hover-click.enabled", true);
+
+        if (!hoverEnabled || !PLAYER_PLACEHOLDER.matcher(withPlaceholders).find()) {
+            // Brak {player} w formacie lub hover wyłączony — zwróć zwykły string
+            String full = withPlaceholders
+                    .replace("{player}",      sender.getName())
+                    .replace("{displayname}", sender.getName());
+            return LegacyComponentSerializer.legacyAmpersand().deserialize(full);
+        }
+
+        // Podziel format na część PRZED nickiem i PO nicku
+        Matcher m = PLAYER_PLACEHOLDER.matcher(withPlaceholders);
+        if (!m.find()) {
+            // Fallback
+            return LegacyComponentSerializer.legacyAmpersand()
+                    .deserialize(withPlaceholders.replace("{player}", sender.getName()));
+        }
+
+        String beforePlayer = withPlaceholders.substring(0, m.start());
+        String afterPlayer  = withPlaceholders.substring(m.end());
+
+        // Zbuduj komponent nicku z hover + click
+        Component nickComponent = buildNickComponent(sender, group, format, beforePlayer);
+
+        // Złącz wszystko
+        return LegacyComponentSerializer.legacyAmpersand().deserialize(beforePlayer)
+                .append(nickComponent)
+                .append(LegacyComponentSerializer.legacyAmpersand().deserialize(afterPlayer));
     }
 
-    /** Usuwa §x kody (już wyrenderowane kolory Minecrafta). */
+    /**
+     * Buduje klikalny komponent nicku gracza.
+     *
+     * Hover pokazuje:
+     *   ──────────────
+     *   ✦ Ranga: VIP
+     *   ⚔ Kliknij aby napisać
+     *   ──────────────
+     *
+     * Klik: sugeruje /msg <nick> (gracz musi tylko dopisać wiadomość)
+     */
+    private Component buildNickComponent(Player sender, String group, String format, String beforePlayer) {
+        // Wyciągnij kolor nicku z formatu (& kod przed {player})
+        // np. "&5{player}" → kolor &5 (fioletowy)
+        String nickColorCode = extractColorBeforePlayer(format);
+        Component nickText = LegacyComponentSerializer.legacyAmpersand()
+                .deserialize(nickColorCode + sender.getName());
+
+        // Zbuduj hover
+        String rankDisplay = formatGroupName(group);
+        String hoverLine1  = plugin.getConfig().getString(
+                "chat.hover-click.hover-line1", "&7✦ Ranga: &f{rank}");
+        String hoverLine2  = plugin.getConfig().getString(
+                "chat.hover-click.hover-line2", "&7⚔ &7Kliknij aby napisać");
+        String separator   = plugin.getConfig().getString(
+                "chat.hover-click.separator", "&8──────────────");
+
+        Component hoverComponent = LegacyComponentSerializer.legacyAmpersand()
+                .deserialize(separator)
+                .append(Component.newline())
+                .append(LegacyComponentSerializer.legacyAmpersand()
+                        .deserialize(hoverLine1.replace("{rank}", rankDisplay)))
+                .append(Component.newline())
+                .append(LegacyComponentSerializer.legacyAmpersand()
+                        .deserialize(hoverLine2))
+                .append(Component.newline())
+                .append(LegacyComponentSerializer.legacyAmpersand()
+                        .deserialize(separator));
+
+        // Click: /msg <nick> (suggest — gracz musi dopisać treść)
+        String clickCommand = plugin.getConfig().getString(
+                "chat.hover-click.click-command", "/msg {player} ");
+
+        return nickText
+                .hoverEvent(HoverEvent.showText(hoverComponent))
+                .clickEvent(ClickEvent.suggestCommand(
+                        clickCommand.replace("{player}", sender.getName())));
+    }
+
+    /**
+     * Wyciąga ostatni kod koloru/formatu (&x) bezpośrednio przed {player} w formacie.
+     * Np. "&5{prefix}&5{player}" → "&5"
+     * Jeśli brak kodu — zwraca "&f" (biały jako fallback).
+     */
+    private String extractColorBeforePlayer(String format) {
+        // Znajdź pozycję {player} lub {displayname}
+        int idx = format.indexOf("{player}");
+        if (idx < 0) idx = format.indexOf("{displayname}");
+        if (idx < 0) return "&f";
+
+        // Szukaj wstecz kodu &x (dokładnie 2 znaki)
+        String before = format.substring(0, idx);
+        // Zbierz wszystkie kolejne kody &x na końcu stringa 'before'
+        StringBuilder codes = new StringBuilder();
+        int i = before.length() - 2;
+        while (i >= 0) {
+            if (before.charAt(i) == '&' && i + 1 < before.length()) {
+                char code = before.charAt(i + 1);
+                if ("0123456789abcdefklmnorABCDEFKLMNOR".indexOf(code) >= 0) {
+                    codes.insert(0, "&" + code);
+                    i -= 2;
+                    continue;
+                }
+            }
+            break;
+        }
+        return codes.isEmpty() ? "&f" : codes.toString();
+    }
+
+    /** Formatuje nazwę grupy LP na ładny wyświetlany string (pierwsza litera wielka). */
+    private String formatGroupName(String group) {
+        if (group == null || group.isBlank()) return "Gracz";
+        return Character.toUpperCase(group.charAt(0)) + group.substring(1).toLowerCase();
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────────
+
     private String stripSectionCodes(String s) {
         if (s == null) return "";
         return s.replaceAll("§[0-9a-fk-orA-FK-OR]", "");
     }
 
-    /** Usuwa &x kody (szablonowe kody kolorów). */
     private String stripAmpCodes(String s) {
         if (s == null) return "";
         return s.replaceAll("&[0-9a-fk-orA-FK-OR]", "");

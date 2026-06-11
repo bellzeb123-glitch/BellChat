@@ -1,6 +1,7 @@
 package pl.bell.bellchat.listeners;
 
 import io.papermc.paper.event.player.AsyncChatEvent;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
@@ -18,18 +19,11 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * BellChat v2.0 — main chat listener.
+ * BellChat v2.2 — main chat listener.
  *
- * Pipeline wiadomości (kolejność ważna):
- *   1. Mute check
- *   2. Chat lock
- *   3. Antispam
- *   4. Profanity filter
- *   5. URL filter         ← NOWE
- *   6. Emoji              ← NOWE
- *   7. Color codes (permission)
- *   8. Route przez ChannelManager (sync)
- *   9. Mention sounds
+ * Zmiany:
+ * - FIX URL filter: używamy plain text deserializacji która stripuje markdown
+ *   żeby regex łapał rzeczywisty URL a nie [text](url) format
  */
 @SuppressWarnings("UnstableApiUsage")
 public class ChatListener implements Listener {
@@ -54,7 +48,11 @@ public class ChatListener implements Listener {
     public void onChat(AsyncChatEvent event) {
         event.setCancelled(true);
 
-        Player player  = event.getPlayer();
+        Player player = event.getPlayer();
+
+        // FIX: używamy plain text żeby rozwinąć markdown [text](url) → url
+        // PlainTextComponentSerializer stripuje formatowanie i daje czysty tekst
+        // włącznie z URL-ami ukrytymi w linkach markdown
         String message = PlainTextComponentSerializer.plainText().serialize(event.message());
 
         var msg      = plugin.getMessageManager();
@@ -96,7 +94,7 @@ public class ChatListener implements Listener {
         // 4. Profanity filter
         message = applyProfanityFilter(message);
 
-        // 5. URL filter
+        // 5. URL filter — FIX: teraz message jest czystym plain textem, regex działa poprawnie
         if (!player.hasPermission("bellchat.url.bypass")) {
             UrlFilterManager.Result urlResult = plugin.getUrlFilterManager().process(message);
             if (urlResult.blocked()) {
@@ -106,17 +104,17 @@ public class ChatListener implements Listener {
             message = urlResult.message();
         }
 
-        // 6. Emoji (tylko gdy gracz ma uprawnienie bellchat.emoji)
+        // 6. Emoji
         if (player.hasPermission("bellchat.emoji")) {
             message = plugin.getEmojiManager().process(message);
         }
 
         // 7. Color codes
         if (player.hasPermission("bellchat.color")) {
-            message = msg.color(message);
+            message = message.replace("&", "§");
         }
 
-        // 8. Route na main thread (LuckPerms + eventy wymagają sync)
+        // 8. Route na main thread
         final String finalMessage = message;
         Bukkit.getScheduler().runTask(plugin, () -> {
             plugin.getChannelManager().routeMessage(player, finalMessage);

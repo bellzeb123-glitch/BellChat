@@ -2,6 +2,7 @@ package pl.bell.bellchat.gui;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -11,19 +12,30 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import pl.bell.bellchat.BellChat;
+import pl.bell.bellchat.channel.Channel;
 import pl.bell.bellchat.model.MuteEntry;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
- * Admin GUI — two tabs:
- *   Tab 1 (BOOK):     Chat Settings (antispam, profanity filter, chatlock toggle)
- *   Tab 2 (BARRIER):  Muted Players — browse & unmute
+ * BellChat AdminGUI v2.3
+ *
+ * Zakładki:
+ *   ① Settings  — toggle wszystkich funkcji czatu
+ *   ② Channels  — widok kanałów + liczba graczy
+ *   ③ Muted     — zarządzanie wyciszeniami (paginacja)
+ *
+ * Otwieranie: /bc gui
  */
 public class AdminGUI implements Listener {
 
-    public static final String TITLE_SETTINGS = "§8[§6BellChat§8] §fSettings";
-    public static final String TITLE_MUTED    = "§8[§6BellChat§8] §fMuted Players";
+    // ── Tytuły inventory ─────────────────────────────────────
+    private static final String TITLE_SETTINGS = "§6BellChat §8» §fSettings";
+    private static final String TITLE_CHANNELS = "§6BellChat §8» §fChannels";
+    private static final String TITLE_MUTED    = "§6BellChat §8» §fMuted Players";
 
     private final BellChat plugin;
 
@@ -32,180 +44,429 @@ public class AdminGUI implements Listener {
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
-    public void open(Player admin) {
-        openSettings(admin);
-    }
+    // ═══════════════════════════════════════════════════════════
+    //  ZAKŁADKA 1 — SETTINGS
+    // ═══════════════════════════════════════════════════════════
 
-    // ── Settings Tab ──────────────────────────────────────────
-
+    /**
+     * Layout (54 sloty):
+     *
+     * [0  Antispam  ][1  Profanity ][2  VIP Notif][3  ChatLock][4  ──────────]
+     * [5  URL Filter][6  Emoji     ][7  Broadcasts][8 Hover/Clk][──────────── ]
+     * [──────────────────────────────── separator ─────────────────────────── ]
+     * [──────────────────────────────── separator ─────────────────────────── ]
+     * [──────────────────────────────── separator ─────────────────────────── ]
+     * [45 Channels  ][46 Muted    ][── ── ── ── ──][53 Reload  ]
+     */
     public void openSettings(Player admin) {
-        Inventory inv = Bukkit.createInventory(null, 27, TITLE_SETTINGS);
-        ItemStack filler = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", null);
-        for (int i = 0; i < 27; i++) inv.setItem(i, filler);
+        Inventory inv = Bukkit.createInventory(null, 54, TITLE_SETTINGS);
+        var cfg = plugin.getConfig();
 
-        boolean antispam  = plugin.getConfig().getBoolean("antispam.enabled", false);
-        boolean profanity  = plugin.getConfig().getBoolean("profanity-filter.enabled", false);
-        boolean chatLocked = plugin.getChatStateManager().isChatLocked();
-        boolean vipNotif   = plugin.getConfig().getBoolean("vip-notification.enabled", true);
+        // ── Rząd 1: funkcje v1.0 ──────────────────────────────
+        inv.setItem(0, makeToggle(Material.SHIELD,
+                "Antispam",
+                cfg.getBoolean("antispam.enabled", false),
+                "antispam.enabled"));
 
-        inv.setItem(10, makeToggle(Material.SHIELD,        "Antispam",          antispam,  "antispam.enabled"));
-        inv.setItem(12, makeToggle(Material.BOOK,          "Profanity Filter",  profanity, "profanity-filter.enabled"));
-        inv.setItem(14, makeToggle(Material.BELL,          "VIP Notification",  vipNotif,  "vip-notification.enabled"));
-        inv.setItem(16, makeChatLockButton(chatLocked));
-        inv.setItem(22, makeItem(Material.BARRIER, "§c§lMuted Players →",
-                List.of("§7Click to view and manage", "§7muted players")));
-        inv.setItem(26, makeItem(Material.ARROW, "§eReload Config",
-                List.of("§7Reload BellChat configuration")));
+        inv.setItem(1, makeToggle(Material.BOOK,
+                "Profanity Filter",
+                cfg.getBoolean("profanity-filter.enabled", false),
+                "profanity-filter.enabled"));
+
+        inv.setItem(2, makeToggle(Material.BELL,
+                "VIP Notification",
+                cfg.getBoolean("vip-notification.enabled", true),
+                "vip-notification.enabled"));
+
+        inv.setItem(3, makeChatLockButton(plugin.getChatStateManager().isChatLocked()));
+
+        // ── Rząd 2: funkcje v2.x ──────────────────────────────
+        inv.setItem(9, makeToggle(Material.CHAIN,
+                "URL Filter",
+                cfg.getBoolean("url-filter.enabled", false),
+                "url-filter.enabled"));
+
+        inv.setItem(10, makeToggle(Material.LIME_DYE,
+                "Emoji",
+                plugin.getEmojiManager().isEnabled(),
+                "emoji-in-emojis-yml")); // specjalny klucz — patrz onClick
+
+        inv.setItem(11, makeToggle(Material.CLOCK,
+                "Auto-Broadcasts",
+                cfg.getBoolean("broadcasts.enabled", false),
+                "broadcasts.enabled"));
+
+        inv.setItem(12, makeToggle(Material.NAME_TAG,
+                "Hover/Click na nicku",
+                cfg.getBoolean("chat.hover-click.enabled", true),
+                "chat.hover-click.enabled"));
+
+        // ── Wypełnienie szarymi pane ───────────────────────────
+        ItemStack filler = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", List.of());
+        for (int i = 18; i < 45; i++) inv.setItem(i, filler);
+
+        // ── Pasek dolny — nawigacja ───────────────────────────
+        inv.setItem(45, makeItem(Material.ENDER_PEARL,
+                "§b§lKanały", List.of("§7Podgląd kanałów", "§7i liczby graczy")));
+
+        inv.setItem(46, makeItem(Material.BARRIER,
+                "§c§lWyciszeni", List.of("§7Zarządzaj wyciszonymi", "§7graczami")));
+
+        inv.setItem(53, makeItem(Material.ARROW,
+                "§e§lReload Config", List.of("§7Przeładuj konfigurację", "§7BellChat")));
 
         admin.openInventory(inv);
     }
 
-    // ── Muted Players Tab ─────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════
+    //  ZAKŁADKA 2 — CHANNELS
+    // ═══════════════════════════════════════════════════════════
 
-    public void openMuted(Player admin, int page) {
-        List<MuteEntry> mutes = new ArrayList<>(plugin.getMuteManager().getAllMutes().values());
-        int total = mutes.size();
-        int pages = Math.max(1, (int) Math.ceil((double) total / 45));
-        page = Math.max(0, Math.min(page, pages - 1));
+    /**
+     * Layout (54 sloty):
+     * Każdy kanał zajmuje slot 9-44 (4 rzędy × 9).
+     * Kanaał: ikona, nazwa, typ, liczba graczy, uprawnienie.
+     *
+     * Pasek dolny: ← Back
+     */
+    public void openChannels(Player admin) {
+        Inventory inv = Bukkit.createInventory(null, 54, TITLE_CHANNELS);
 
-        Inventory inv = Bukkit.createInventory(null, 54, TITLE_MUTED);
-        ItemStack filler = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", null);
+        ItemStack filler = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", List.of());
+        for (int i = 0; i < 9; i++) inv.setItem(i, filler);
         for (int i = 45; i < 54; i++) inv.setItem(i, filler);
 
-        int start = page * 45;
-        int end   = Math.min(start + 45, total);
-        for (int i = start; i < end; i++) {
-            inv.setItem(i - start, makeMuteHead(mutes.get(i)));
+        // Tytuł
+        inv.setItem(4, makeItem(Material.COMPASS,
+                "§6§lKanały czatu",
+                List.of("§7Aktywne kanały i liczba graczy")));
+
+        // ← Back
+        inv.setItem(45, makeItem(Material.ARROW,
+                "§f§l← Powrót", List.of("§7Wróć do Settings")));
+
+        // Wyświetl kanały
+        var channels = plugin.getChannelManager().getChannels();
+        int slot = 10;
+
+        for (Channel ch : channels.values()) {
+            if (slot > 43) break;
+
+            // Policz graczy w tym kanale
+            long playerCount = Bukkit.getOnlinePlayers().stream()
+                    .filter(p -> plugin.getChannelManager()
+                            .getPlayerChannel(p).getId().equals(ch.getId()))
+                    .count();
+
+            String displayName = ch.getDisplayName().replace("&", "§");
+            String type        = ch.getType().name();
+            String perm        = ch.getRequiredPermission() != null
+                    ? "§7Uprawnienie: §f" + ch.getRequiredPermission()
+                    : "§7Dostępny dla wszystkich";
+            String radius      = ch.getType().name().equals("LOCAL")
+                    ? "§7Promień: §f" + ch.getLocalRadius() + " bloków"
+                    : null;
+            String status      = ch.isEnabled()
+                    ? "§aWłączony" : "§cWyłączony";
+
+            List<String> lore = new ArrayList<>();
+            lore.add("§8Typ: §7" + type);
+            lore.add("§8Gracze: §f" + playerCount);
+            lore.add(perm);
+            if (radius != null) lore.add(radius);
+            lore.add("§8Status: " + status);
+
+            Material mat = switch (ch.getType()) {
+                case GLOBAL -> Material.GRASS_BLOCK;
+                case LOCAL  -> Material.OAK_LOG;
+                case VIP    -> Material.NETHER_STAR;
+                case ADMIN  -> Material.COMMAND_BLOCK;
+                case PARTY  -> Material.BLUE_BANNER;
+            };
+
+            inv.setItem(slot, makeItem(mat, displayName + " §8[§7" + ch.getId() + "§8]", lore));
+            slot++;
         }
 
-        if (page > 0) inv.setItem(45, makeItem(Material.ARROW, "§e◀ Previous", null));
-        inv.setItem(49, makeItem(Material.BOOK, "§6Page " + (page + 1) + "/" + pages,
-                List.of("§7Total muted: §f" + total, "", "§cRMB on player to unmute")));
-        if (page < pages - 1) inv.setItem(53, makeItem(Material.ARROW, "§eNext ▶", null));
-        inv.setItem(48, makeItem(Material.ARROW, "§7← Back to Settings", null));
-
         admin.openInventory(inv);
-        // Store page for navigation
-        admin.setMetadata("bchat_muted_page",
-                new org.bukkit.metadata.FixedMetadataValue(plugin, page));
     }
 
-    // ── Click Handler ─────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════
+    //  ZAKŁADKA 3 — MUTED PLAYERS
+    // ═══════════════════════════════════════════════════════════
+
+    public void openMuted(Player admin, int page) {
+        var muteManager = plugin.getMuteManager();
+        Collection<MuteEntry> allMutes = muteManager.getAllMutes().values();
+        List<MuteEntry> mutes = new ArrayList<>(allMutes);
+
+        int perPage = 28;
+        int total   = mutes.size();
+        int pages   = Math.max(1, (int) Math.ceil((double) total / perPage));
+        page        = Math.max(0, Math.min(page, pages - 1));
+
+        Inventory inv = Bukkit.createInventory(null, 54, TITLE_MUTED);
+
+        ItemStack filler = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", List.of());
+        for (int i = 0; i < 9; i++) inv.setItem(i, filler);
+        for (int i = 45; i < 54; i++) inv.setItem(i, filler);
+
+        inv.setItem(4, makeItem(Material.BARRIER,
+                "§c§lWyciszeni gracze",
+                List.of("§7Łącznie: §f" + total,
+                        "§7Strona: §f" + (page + 1) + "/" + pages,
+                        "§7Prawy klik = odcisz")));
+
+        // ← Back
+        inv.setItem(45, makeItem(Material.ARROW,
+                "§f§l← Powrót", List.of("§7Wróć do Settings")));
+
+        // Nawigacja stron
+        if (page > 0) {
+            inv.setItem(48, makeItem(Material.ARROW,
+                    "§f§l← Poprzednia", List.of("§7Strona " + page)));
+        }
+        if (page < pages - 1) {
+            inv.setItem(50, makeItem(Material.ARROW,
+                    "§f§lNastępna →", List.of("§7Strona " + (page + 2))));
+        }
+
+        // Głowy wyciszonych
+        int start = page * perPage;
+        int end   = Math.min(start + perPage, total);
+        int slot  = 10;
+
+        for (int i = start; i < end; i++) {
+            if (slot == 17 || slot == 26 || slot == 35) slot++;
+            if (slot > 44) break;
+            inv.setItem(slot, makeMuteHead(mutes.get(i)));
+            slot++;
+        }
+
+        admin.openInventory(inv);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  CLICK HANDLER
+    // ═══════════════════════════════════════════════════════════
 
     @EventHandler
     public void onClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player admin)) return;
+
         String title = event.getView().getTitle();
-        if (!title.equals(TITLE_SETTINGS) && !title.equals(TITLE_MUTED)) return;
+        if (!title.equals(TITLE_SETTINGS)
+                && !title.equals(TITLE_CHANNELS)
+                && !title.equals(TITLE_MUTED)) return;
+
         event.setCancelled(true);
-        if (event.getClickedInventory() != event.getView().getTopInventory()) return;
+        if (event.getCurrentItem() == null) return;
 
-        int slot = event.getSlot();
-        var msg  = plugin.getMessageManager();
-
+        // ── Settings ──────────────────────────────────────────
         if (title.equals(TITLE_SETTINGS)) {
-            handleSettings(admin, slot);
-        } else {
-            handleMuted(admin, slot, event.isRightClick());
+            handleSettings(admin, event.getSlot(), event.isRightClick());
+        }
+
+        // ── Channels — tylko nawigacja ←  ─────────────────────
+        else if (title.equals(TITLE_CHANNELS)) {
+            if (event.getSlot() == 45) openSettings(admin);
+        }
+
+        // ── Muted ─────────────────────────────────────────────
+        else if (title.equals(TITLE_MUTED)) {
+            handleMuted(admin, event);
         }
     }
 
-    private void handleSettings(Player admin, int slot) {
-        var msg = plugin.getMessageManager();
+    private void handleSettings(Player admin, int slot, boolean rightClick) {
+        var mm = plugin.getMessageManager();
+
         switch (slot) {
-            case 10 -> toggleConfig(admin, "antispam.enabled",         "Antispam");
-            case 12 -> toggleConfig(admin, "profanity-filter.enabled", "Profanity Filter");
-            case 14 -> toggleConfig(admin, "vip-notification.enabled", "VIP Notification");
-            case 16 -> {
-                // Chat lock toggle
-                boolean locked = !plugin.getChatStateManager().isChatLocked();
-                plugin.getChatStateManager().setChatLocked(locked);
-                String key = locked ? "chatlock-locked" : "chatlock-unlocked";
-                for (Player p : Bukkit.getOnlinePlayers())
-                    msg.send(p, key, Map.of("player", admin.getName()));
-                Bukkit.getScheduler().runTaskLater(plugin, () -> openSettings(admin), 1L);
+            // Toggle antispam
+            case 0 -> toggleConfig(admin, "antispam.enabled",
+                    "Antispam");
+
+            // Toggle profanity
+            case 1 -> toggleConfig(admin, "profanity-filter.enabled",
+                    "Profanity Filter");
+
+            // Toggle VIP notif
+            case 2 -> toggleConfig(admin, "vip-notification.enabled",
+                    "VIP Notification");
+
+            // Toggle chat lock
+            case 3 -> {
+                boolean locked = plugin.getChatStateManager().isChatLocked();
+                plugin.getChatStateManager().setChatLocked(!locked);
+                mm.send(admin, !locked ? "chatlock-locked" : "chatlock-unlocked",
+                        Map.of("player", admin.getName()));
+                Bukkit.getScheduler().runTask(plugin, () -> openSettings(admin));
             }
-            case 22 -> Bukkit.getScheduler().runTaskLater(plugin, () -> openMuted(admin, 0), 1L);
-            case 26 -> {
+
+            // Toggle URL filter
+            case 9 -> toggleConfig(admin, "url-filter.enabled",
+                    "URL Filter");
+
+            // Toggle emoji — zapisz do emojis.yml
+            case 10 -> {
+                boolean cur = plugin.getEmojiManager().isEnabled();
+                plugin.getEmojiManager().setEnabled(!cur);
+                admin.sendMessage(mm.getPrefix() + (cur ? "§cEmoji §7wyłączone."
+                        : "§aEmoji §7włączone."));
+                Bukkit.getScheduler().runTask(plugin, () -> openSettings(admin));
+            }
+
+            // Toggle broadcasts
+            case 11 -> toggleConfig(admin, "broadcasts.enabled",
+                    "Auto-Broadcasts");
+
+            // Toggle hover/click
+            case 12 -> toggleConfig(admin, "chat.hover-click.enabled",
+                    "Hover/Click");
+
+            // Otwórz Channels
+            case 45 -> Bukkit.getScheduler().runTask(plugin, () -> openChannels(admin));
+
+            // Otwórz Muted
+            case 46 -> Bukkit.getScheduler().runTask(plugin, () -> openMuted(admin, 0));
+
+            // Reload
+            case 53 -> {
                 plugin.reload();
-                msg.send(admin, "reload-done");
-                Bukkit.getScheduler().runTaskLater(plugin, () -> openSettings(admin), 1L);
+                mm.send(admin, "reload-done");
+                Bukkit.getScheduler().runTask(plugin, () -> openSettings(admin));
             }
         }
     }
 
-    private void handleMuted(Player admin, int slot, boolean isRight) {
-        var msg = plugin.getMessageManager();
-        int page = admin.hasMetadata("bchat_muted_page")
-                ? (int) admin.getMetadata("bchat_muted_page").get(0).value() : 0;
+    private void handleMuted(Player admin, InventoryClickEvent event) {
+        int slot = event.getSlot();
 
-        if (slot == 45) { Bukkit.getScheduler().runTaskLater(plugin, () -> openMuted(admin, page - 1), 1L); return; }
-        if (slot == 53) { Bukkit.getScheduler().runTaskLater(plugin, () -> openMuted(admin, page + 1), 1L); return; }
-        if (slot == 48) { Bukkit.getScheduler().runTaskLater(plugin, () -> openSettings(admin), 1L); return; }
-        if (slot >= 45)  return;
+        // ← Powrót
+        if (slot == 45) {
+            Bukkit.getScheduler().runTask(plugin, () -> openSettings(admin));
+            return;
+        }
 
-        // Player head slot
-        if (!isRight) return; // LMB = info only, already in lore
-        List<MuteEntry> mutes = new ArrayList<>(plugin.getMuteManager().getAllMutes().values());
-        int index = page * 45 + slot;
-        if (index >= mutes.size()) return;
+        // Poprzednia / Następna strona
+        String pageInfo = "";
+        if (event.getView().getTitle().equals(TITLE_MUTED)) {
+            var item = event.getCurrentItem();
+            if (item != null && item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
+                String name = item.getItemMeta().getDisplayName();
+                if (name.contains("Poprzednia") && slot == 48) {
+                    // Wyciągnij numer strony z lore
+                    List<String> lore = item.getItemMeta().getLore();
+                    if (lore != null && !lore.isEmpty()) {
+                        String stripped = lore.get(0).replaceAll("§.", "").replace("Strona ", "");
+                        try {
+                            int page = Integer.parseInt(stripped.trim()) - 1;
+                            Bukkit.getScheduler().runTask(plugin, () -> openMuted(admin, page));
+                        } catch (NumberFormatException ignored) {}
+                    }
+                    return;
+                }
+                if (name.contains("Następna") && slot == 50) {
+                    List<String> lore = item.getItemMeta().getLore();
+                    if (lore != null && !lore.isEmpty()) {
+                        String stripped = lore.get(0).replaceAll("§.", "").replace("Strona ", "");
+                        try {
+                            int page = Integer.parseInt(stripped.trim()) - 1;
+                            Bukkit.getScheduler().runTask(plugin, () -> openMuted(admin, page));
+                        } catch (NumberFormatException ignored) {}
+                    }
+                    return;
+                }
+            }
+        }
 
-        MuteEntry entry = mutes.get(index);
-        plugin.getMuteManager().unmute(entry.getPlayerUUID());
-        msg.send(admin, "unmute-success", Map.of("player", entry.getPlayerName()));
-        Player target = Bukkit.getPlayer(entry.getPlayerUUID());
-        if (target != null) target.sendMessage(msg.getPrefix() + "§aYou have been unmuted.");
-        Bukkit.getScheduler().runTaskLater(plugin, () -> openMuted(admin, page), 1L);
+        // Prawy klik na głowie gracza = odcisz
+        if (!event.isRightClick()) return;
+        if (slot < 10 || slot > 44) return;
+
+        var item = event.getCurrentItem();
+        if (item == null || item.getType() != Material.PLAYER_HEAD) return;
+        if (!(item.getItemMeta() instanceof SkullMeta skull)) return;
+
+        OfflinePlayer target = skull.getOwningPlayer();
+        if (target == null) return;
+
+        plugin.getMuteManager().unmute(target.getUniqueId());
+        admin.sendMessage(plugin.getMessageManager().getPrefix()
+                + "§aOdciszono gracza §f" + target.getName() + "§a.");
+
+        if (target.getPlayer() != null && target.getPlayer().isOnline()) {
+            plugin.getMessageManager().send(target.getPlayer(), "unmute-success",
+                    Map.of("player", target.getName()));
+        }
+
+        Bukkit.getScheduler().runTask(plugin, () -> openMuted(admin, 0));
     }
 
-    private void toggleConfig(Player admin, String path, String name) {
-        boolean current = plugin.getConfig().getBoolean(path, false);
-        plugin.getConfig().set(path, !current);
+    // ═══════════════════════════════════════════════════════════
+    //  HELPERS
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * Toggle wartości boolean w config.yml.
+     * Specjalny przypadek: "emoji-in-emojis-yml" → EmojiManager.setEnabled()
+     */
+    private void toggleConfig(Player admin, String configKey, String label) {
+        boolean current = plugin.getConfig().getBoolean(configKey, false);
+        plugin.getConfig().set(configKey, !current);
         plugin.saveConfig();
         plugin.reload();
-        admin.sendMessage(plugin.getMessageManager().getPrefix() +
-                "§7" + name + ": " + (!current ? "§aEnabled" : "§cDisabled"));
-        Bukkit.getScheduler().runTaskLater(plugin, () -> openSettings(admin), 1L);
+
+        String status = !current ? "§awłączony" : "§cwłączony";
+        admin.sendMessage(plugin.getMessageManager().getPrefix()
+                + "§f" + label + " " + status + "§7.");
+
+        Bukkit.getScheduler().runTask(plugin, () -> openSettings(admin));
     }
 
-    // ── Item Builders ─────────────────────────────────────────
-
     private ItemStack makeToggle(Material mat, String name, boolean enabled, String configPath) {
-        Material m = enabled ? Material.LIME_STAINED_GLASS_PANE : Material.RED_STAINED_GLASS_PANE;
-        String status = enabled ? "§aEnabled" : "§cDisabled";
-        return makeItem(m, "§f" + name + ": " + status,
-                List.of("§7Click to toggle", "§7Config: §e" + configPath));
+        String status = enabled ? "§aWłączony ✔" : "§cWyłączony ✘";
+        return makeItem(mat, "§f" + name, List.of(
+                status,
+                "§8──────────────",
+                "§7Kliknij aby przełączyć"
+        ));
     }
 
     private ItemStack makeChatLockButton(boolean locked) {
-        Material m = locked ? Material.RED_CONCRETE : Material.GREEN_CONCRETE;
-        String label = locked ? "§c§lChat: LOCKED" : "§a§lChat: UNLOCKED";
-        return makeItem(m, label, List.of("§7Click to " + (locked ? "unlock" : "lock") + " chat"));
+        Material mat = locked ? Material.BARRIER : Material.GREEN_STAINED_GLASS_PANE;
+        String status = locked ? "§cZablokowany ✘" : "§aOdblokowany ✔";
+        return makeItem(mat, "§fChat Lock", List.of(
+                status,
+                "§8──────────────",
+                "§7Kliknij aby przełączyć"
+        ));
     }
 
     private ItemStack makeMuteHead(MuteEntry entry) {
-        @SuppressWarnings("deprecation")
-        var op = Bukkit.getOfflinePlayer(entry.getPlayerUUID());
+        OfflinePlayer op = Bukkit.getOfflinePlayer(entry.getPlayerUUID());
         ItemStack skull = new ItemStack(Material.PLAYER_HEAD);
-        SkullMeta meta  = (SkullMeta) skull.getItemMeta();
-        meta.setOwningPlayer(op);
-        meta.setDisplayName("§e" + entry.getPlayerName());
-        meta.setLore(List.of(
-                "§7Muted by: §f" + entry.getMutedBy(),
-                "§7Reason: §f" + entry.getReason(),
-                "§7Expires: §f" + entry.getFormattedRemaining(),
-                "",
-                "§cRMB §7— Unmute"
-        ));
-        skull.setItemMeta(meta);
+        if (skull.getItemMeta() instanceof SkullMeta meta) {
+            meta.setOwningPlayer(op);
+            meta.setDisplayName("§c" + (op.getName() != null ? op.getName() : entry.getPlayerUUID().toString()));
+            List<String> lore = new ArrayList<>();
+            lore.add("§7Wyciszony przez: §f" + entry.getMutedBy());
+            lore.add("§7Powód: §f" + entry.getReason());
+            lore.add("§7Wygasa: §f" + (entry.isPermanent() ? "nigdy" : entry.getFormattedExpiry()));
+            lore.add("§8──────────────");
+            lore.add("§cPrawy klik = odcisz");
+            meta.setLore(lore);
+            skull.setItemMeta(meta);
+        }
         return skull;
     }
 
     private ItemStack makeItem(Material mat, String name, List<String> lore) {
         ItemStack item = new ItemStack(mat);
         ItemMeta meta  = item.getItemMeta();
+        if (meta == null) return item;
         meta.setDisplayName(name);
-        if (lore != null) meta.setLore(lore);
+        meta.setLore(lore);
         item.setItemMeta(meta);
         return item;
     }
