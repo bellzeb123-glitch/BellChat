@@ -46,10 +46,8 @@ public class VIPJoinListener implements Listener {
         boolean isPl  = lang.equals("pl");
 
         // ── 1. Nadpisz domyślny join message (czysty nick, bez LP prefix) ──
-        String joinMsg = isPl
-                ? "§6✦ §e" + player.getName() + " §6dołączył do gry. §6✦"
-                : "§6✦ §e" + player.getName() + " §6joined the game. §6✦";
-
+        // Join message — jeden format dla wszystkich, bez rozróżnienia języka
+        String joinMsg = "§6✦ §e" + player.getName() + " §6joined the game. §6✦";
         event.joinMessage(LegacyComponentSerializer.legacySection()
                 .deserialize(joinMsg));
 

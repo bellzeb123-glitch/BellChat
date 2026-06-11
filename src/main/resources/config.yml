@@ -2,7 +2,7 @@
 #  BellChat v2.2 - Configuration
 # ============================================================
 
-language: "pl"
+language: "en"
 
 # ── Chat Format ───────────────────────────────────────────────
 chat-format: "&f{player}&f: {message}"
@@ -62,7 +62,7 @@ url-filter:
 # ── VIP Rank Notification ─────────────────────────────────────
 vip-notification:
   enabled: true
-  message: "&6✦ &e{player} &6dołączył do rankingu VIP! &6✦"
+  message: "&6✦ &5VIP &e{player} &6joined the server! &6✦"
   vip-group: "vip"
 
 # ── Chat Lock ─────────────────────────────────────────────────
