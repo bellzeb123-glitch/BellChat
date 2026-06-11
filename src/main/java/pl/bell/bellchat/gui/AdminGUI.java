@@ -58,6 +58,9 @@ public class AdminGUI implements Listener {
      * [──────────────────────────────── separator ─────────────────────────── ]
      * [45 Channels  ][46 Muted    ][── ── ── ── ──][53 Reload  ]
      */
+    /** Alias dla kompatybilności z BellChatCommand który wywołuje adminGUI.open(player). */
+    public void open(Player admin) { openSettings(admin); }
+
     public void openSettings(Player admin) {
         Inventory inv = Bukkit.createInventory(null, 54, TITLE_SETTINGS);
         var cfg = plugin.getConfig();
@@ -452,7 +455,7 @@ public class AdminGUI implements Listener {
             List<String> lore = new ArrayList<>();
             lore.add("§7Wyciszony przez: §f" + entry.getMutedBy());
             lore.add("§7Powód: §f" + entry.getReason());
-            lore.add("§7Wygasa: §f" + (entry.isPermanent() ? "nigdy" : entry.getFormattedExpiry()));
+            lore.add("§7Wygasa: §f" + (entry.isPermanent() ? "nigdy" : entry.getFormattedRemaining()));
             lore.add("§8──────────────");
             lore.add("§cPrawy klik = odcisz");
             meta.setLore(lore);
