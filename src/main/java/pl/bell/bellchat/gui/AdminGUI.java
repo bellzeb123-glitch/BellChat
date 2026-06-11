@@ -81,7 +81,7 @@ public class AdminGUI implements Listener {
                 getConfigBool("chat.hover-click.enabled", true),
                 "Kliknięcie na nick gracza",
                 "otwiera /msg <nick>."));
-        inv.setItem(13, makeToggle(Material.MUSIC_DISC_CAT, "Antispam Cooldown",
+        inv.setItem(13, makeToggle(Material.COMPARATOR, "Blokuj duplikaty",
                 getConfigBool("antispam.block-duplicate", true),
                 "Blokuje wysłanie tej samej",
                 "wiadomości dwa razy."));

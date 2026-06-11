@@ -35,7 +35,6 @@ public class BellChatCommand implements CommandExecutor, TabCompleter {
 
         return switch (args[0].toLowerCase()) {
 
-            // /bc gui LUB /bc admin — otwiera AdminGUI
             case "gui", "admin" -> {
                 if (!(sender instanceof Player p)) { msg.send(sender, "player-only"); yield true; }
                 if (!p.hasPermission("bellchat.admin")) { msg.send(sender, "no-permission"); yield true; }
@@ -47,6 +46,28 @@ public class BellChatCommand implements CommandExecutor, TabCompleter {
                 if (!sender.hasPermission("bellchat.admin")) { msg.send(sender, "no-permission"); yield true; }
                 plugin.reload();
                 msg.send(sender, "reload-done");
+                yield true;
+            }
+
+            // /bc lang <en|pl> — zmiana języka
+            case "lang" -> {
+                if (!sender.hasPermission("bellchat.admin")) { msg.send(sender, "no-permission"); yield true; }
+                if (args.length < 2) {
+                    sender.sendMessage(plugin.getMessageManager().getPrefix()
+                            + "§cUżycie: §f/bc lang <en|pl>");
+                    yield true;
+                }
+                String lang = args[1].toLowerCase();
+                if (!lang.equals("en") && !lang.equals("pl")) {
+                    sender.sendMessage(plugin.getMessageManager().getPrefix()
+                            + "§cDostępne języki: §fen§c, §fpl");
+                    yield true;
+                }
+                plugin.getConfig().set("language", lang);
+                plugin.saveConfig();
+                plugin.reload();
+                sender.sendMessage(plugin.getMessageManager().getPrefix()
+                        + "§7Język zmieniony na: §f" + lang.toUpperCase());
                 yield true;
             }
 
@@ -91,7 +112,6 @@ public class BellChatCommand implements CommandExecutor, TabCompleter {
     }
 
     private void sendHelp(CommandSender sender) {
-        // FIX: używamy § zamiast & żeby kody kolorów były renderowane
         sender.sendMessage("§6=== BellChat v2 ===");
         sender.sendMessage("§7/msg §f<gracz> <wiad.> §8— §7Prywatna wiadomość");
         sender.sendMessage("§7/r §f<wiad.> §8— §7Odpowiedź na PM");
@@ -100,6 +120,7 @@ public class BellChatCommand implements CommandExecutor, TabCompleter {
         if (sender.hasPermission("bellchat.admin")) {
             sender.sendMessage("§8--- §6Admin §8---");
             sender.sendMessage("§7/bc gui §8— §7Panel admina (GUI)");
+            sender.sendMessage("§7/bc lang §f<en|pl> §8— §7Zmień język");
             sender.sendMessage("§7/bc mute §f<gracz> [czas] [powód]");
             sender.sendMessage("§7/bc unmute §f<gracz>");
             sender.sendMessage("§7/bc clearchat §8(/bc cc)");
@@ -127,16 +148,19 @@ public class BellChatCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender s, Command c, String a, String[] args) {
         if (args.length == 1) {
-            return List.of("help", "gui", "admin", "reload", "mute", "unmute",
-                    "clearchat", "chatlock", "spy", "ch")
+            return List.of("help", "gui", "admin", "lang", "reload", "mute",
+                    "unmute", "clearchat", "chatlock", "spy", "ch")
                     .stream().filter(x -> x.startsWith(args[0].toLowerCase())).toList();
         }
-        if (args.length == 2 && (args[0].equalsIgnoreCase("mute")
-                || args[0].equalsIgnoreCase("unmute"))) {
-            return plugin.getServer().getOnlinePlayers().stream()
-                    .map(Player::getName)
-                    .filter(n -> n.toLowerCase().startsWith(args[1].toLowerCase()))
-                    .toList();
+        if (args.length == 2) {
+            if (args[0].equalsIgnoreCase("lang"))
+                return List.of("en", "pl").stream()
+                        .filter(x -> x.startsWith(args[1].toLowerCase())).toList();
+            if (args[0].equalsIgnoreCase("mute") || args[0].equalsIgnoreCase("unmute"))
+                return plugin.getServer().getOnlinePlayers().stream()
+                        .map(Player::getName)
+                        .filter(n -> n.toLowerCase().startsWith(args[1].toLowerCase()))
+                        .toList();
         }
         return List.of();
     }
