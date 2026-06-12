@@ -84,7 +84,7 @@ public class AdminGUI implements Listener {
         inv.setItem(13, makeToggle(Material.COMPARATOR, "Blokuj duplikaty",
                 getConfigBool("antispam.block-duplicate", true),
                 "Blocks sending the same",
-                "wiadomości dwa razy."));
+                "message twice in a row."));
 
         // Filler
         ItemStack filler = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", List.of());

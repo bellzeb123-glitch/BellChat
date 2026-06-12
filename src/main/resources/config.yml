@@ -7,10 +7,20 @@ language: "en"
 # ── Chat Format ───────────────────────────────────────────────
 chat-format: "&f{player}&f: {message}"
 
+# Format chatu per-grupa LuckPerms.
+# {prefix}   = prefix grupy z LP (zachowuje swój oryginalny kolor)
+# {lp-color} = ostatni kolor z LP prefix — używaj go dla {player} i :
+# {player}   = nazwa gracza
+# {message}  = treść wiadomości (zawsze biała &f z kodu)
+#
+# Dzięki {lp-color} dodanie nowej grupy NIE wymaga zmiany w configu —
+# wystarczy ustawić prefix w LP: /lp group <grupa> meta setprefix "&X[NAME] "
 group-formats:
   default: "&f{player}&f: {message}"
-  vip:     "&5{prefix}&5{player}&5:&f {message}"
-  admin:   "&6{prefix}&6{player}&6:&f {message}"
+  vip:     "{prefix}{lp-color}{player}{lp-color}:&f {message}"
+  admin:   "{prefix}{lp-color}{player}{lp-color}:&f {message}"
+  # Universal — używaj tego dla wszystkich grup które dostają prefix w LP
+  # Kolor wyciągany automatycznie z LP prefix.
 
 # ── Hover + Click na nicku ────────────────────────────────────
 # Gdy enabled: true, kliknięcie na nick otwiera /msg <gracz>

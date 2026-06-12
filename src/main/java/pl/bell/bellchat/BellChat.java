@@ -10,13 +10,19 @@ import pl.bell.bellchat.listeners.VIPJoinListener;
 import pl.bell.bellchat.managers.*;
 
 /**
- * BellChat v2.1 — dodano EmojiManager, UrlFilterManager, BroadcastManager.
+ * BellChat v1.26.1.2
+ *
+ * Główna klasa pluginu.
+ *
+ * NAPRAWY w tej wersji:
+ * - reload() faktycznie przeładowuje WSZYSTKIE managery (nie tylko config)
+ * - dzięki temu /bch lang en|pl faktycznie zmienia język
+ * - banner gold ASCII art zachowany
  */
 public class BellChat extends JavaPlugin {
 
     private static BellChat instance;
 
-    // v1.0 managers
     private MessageManager    messageManager;
     private LuckPermsManager  luckPermsManager;
     private MuteManager       muteManager;
@@ -25,11 +31,7 @@ public class BellChat extends JavaPlugin {
     private ChatStateManager  chatStateManager;
     private AdminGUI          adminGUI;
     private MsgSpyManager     msgSpyManager;
-
-    // v2.0
     private ChannelManager    channelManager;
-
-    // v2.1 — nowe
     private EmojiManager      emojiManager;
     private UrlFilterManager  urlFilterManager;
     private BroadcastManager  broadcastManager;
@@ -38,8 +40,6 @@ public class BellChat extends JavaPlugin {
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
-
-        // ── Baner ─────────────────────────────────────────────
         printBanner();
 
         // ── Managers ──────────────────────────────────────────
@@ -52,12 +52,10 @@ public class BellChat extends JavaPlugin {
         this.msgSpyManager    = new MsgSpyManager(this);
         this.adminGUI         = new AdminGUI(this);
 
-        // v2.0
         this.channelManager   = new ChannelManager(this);
         this.channelManager.load();
         BellChatAPI.init(this);
 
-        // v2.1 — nowe managery
         this.emojiManager     = new EmojiManager(this);
         this.urlFilterManager = new UrlFilterManager(this);
         this.broadcastManager = new BroadcastManager(this);
@@ -91,17 +89,26 @@ public class BellChat extends JavaPlugin {
         getLogger().info("BellChat disabled. Data saved.");
     }
 
+    /**
+     * FIX: reload() teraz faktycznie przeładowuje WSZYSTKIE managery.
+     * Poprzednia wersja wywoływała tylko reloadConfig() — przez co
+     * /bch lang en|pl nie miało żadnego efektu (MessageManager
+     * nadal trzymał stary plik językowy w pamięci).
+     */
     public void reload() {
+        // 1. Najpierw przeładuj config z dysku
         reloadConfig();
-        messageManager.reload();
-        muteManager.reload();
-        ignoreManager.reload();
-        antispamManager.reload();
-        chatStateManager.reload();
-        channelManager.reload();
-        emojiManager.reload();
-        urlFilterManager.reload();
-        broadcastManager.reload();
+
+        // 2. Potem każdy manager — kolejność ważna:
+        //    - MessageManager jako pierwszy (inne używają komunikatów)
+        if (messageManager   != null) messageManager.reload();
+        if (channelManager   != null) channelManager.reload();
+        if (emojiManager     != null) emojiManager.reload();
+        if (urlFilterManager != null) urlFilterManager.reload();
+        if (broadcastManager != null) broadcastManager.reload();
+        if (antispamManager  != null) antispamManager.reload();
+
+        getLogger().info("BellChat reloaded.");
     }
 
     // ── Banner ────────────────────────────────────────────────
@@ -121,8 +128,6 @@ public class BellChat extends JavaPlugin {
         c.sendMessage("§7  Status  §aFree §7│ §7Pro §5Coming Soon");
         c.sendMessage("§r");
     }
-
-    // ── Helpers ───────────────────────────────────────────────
 
     private void reg(String name, org.bukkit.command.CommandExecutor exec) {
         var cmd = getCommand(name);

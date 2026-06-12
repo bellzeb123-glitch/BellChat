@@ -212,9 +212,22 @@ public class ChannelManager {
      */
     private Component buildComponent(Player sender, Channel channel, String message) {
         var lp     = plugin.getLuckPermsManager();
-        String prefix  = stripSectionCodes(lp.getPrefix(sender));
-        String suffix  = stripSectionCodes(lp.getSuffix(sender));
-        String group   = lp.getPrimaryGroup(sender);
+
+        // FIX: NIE stripujemy koloru z LP prefix.
+        // Wcześniej stripSectionCodes(lp.getPrefix()) usuwał §-kody z LP,
+        // przez co w formacie "&5{prefix}" hardcoded &5 nadkładał kolor.
+        // Teraz zachowujemy oryginalny kolor z LP (np. "§5[VIP] ").
+        String rawLpPrefix = lp.getPrefix(sender);
+        String prefix      = rawLpPrefix != null ? rawLpPrefix : "";
+        String suffix      = lp.getSuffix(sender);
+        if (suffix == null) suffix = "";
+        String group       = lp.getPrimaryGroup(sender);
+
+        // Wyciągnij kolor LP — używany dla {lp-color} placeholdera.
+        // Dzięki temu config może być uniwersalny:
+        //   format: "{prefix}{lp-color}{player}{lp-color}: &f{message}"
+        // i każda grupa LP dostaje swój własny kolor automatycznie.
+        String lpColor = extractLastColorCode(prefix);
 
         // Wybór formatu (group-formats tylko dla GLOBAL)
         String format = channel.getFormat();
@@ -227,10 +240,11 @@ public class ChannelManager {
 
         // Podmień wszystkie placeholdery OPRÓCZ {player}/{displayname}
         String withPlaceholders = format
-                .replace("{prefix}",  prefix)
-                .replace("{suffix}",  suffix)
-                .replace("{channel}", stripSectionCodes(stripAmpCodes(channel.getDisplayName())))
-                .replace("{message}", "&f" + message);
+                .replace("{prefix}",   prefix)
+                .replace("{suffix}",   suffix)
+                .replace("{lp-color}", lpColor)
+                .replace("{channel}",  stripSectionCodes(stripAmpCodes(channel.getDisplayName())))
+                .replace("{message}",  "&f" + message);
 
         // Sprawdź czy hover/click jest włączony
         boolean hoverEnabled = plugin.getConfig().getBoolean("chat.hover-click.enabled", true);
@@ -255,7 +269,7 @@ public class ChannelManager {
         String afterPlayer  = withPlaceholders.substring(m.end());
 
         // Zbuduj komponent nicku z hover + click
-        Component nickComponent = buildNickComponent(sender, group, format, beforePlayer);
+        Component nickComponent = buildNickComponent(sender, group, format, beforePlayer, lpColor);
 
         // Złącz wszystko
         return LegacyComponentSerializer.legacyAmpersand().deserialize(beforePlayer)
@@ -274,10 +288,21 @@ public class ChannelManager {
      *
      * Klik: sugeruje /msg <nick> (gracz musi tylko dopisać wiadomość)
      */
-    private Component buildNickComponent(Player sender, String group, String format, String beforePlayer) {
-        // Wyciągnij kolor nicku z formatu (& kod przed {player})
-        // np. "&5{player}" → kolor &5 (fioletowy)
-        String nickColorCode = extractColorBeforePlayer(format);
+    private Component buildNickComponent(Player sender, String group, String format,
+                                         String beforePlayer, String lpColor) {
+        // Wyciągnij kolor nicku z formatu (& kod przed {player}).
+        // Jeśli format używa "{lp-color}{player}" → kolor pochodzi z LP.
+        // Jeśli format ma hardcoded "&5{player}" → kolor jest fioletowy.
+        String nickColorCode;
+        // Sprawdź czy bezpośrednio przed {player} jest {lp-color}
+        int playerIdx = format.indexOf("{player}");
+        if (playerIdx < 0) playerIdx = format.indexOf("{displayname}");
+        if (playerIdx > 0 && format.substring(0, playerIdx).endsWith("{lp-color}")) {
+            nickColorCode = lpColor;
+        } else {
+            nickColorCode = extractColorBeforePlayer(format);
+        }
+
         Component nickText = LegacyComponentSerializer.legacyAmpersand()
                 .deserialize(nickColorCode + sender.getName());
 
@@ -310,6 +335,33 @@ public class ChannelManager {
                 .hoverEvent(HoverEvent.showText(hoverComponent))
                 .clickEvent(ClickEvent.suggestCommand(
                         clickCommand.replace("{player}", sender.getName())));
+    }
+
+    /**
+     * Wyciąga ostatni kod koloru (§ lub &) z LP prefix.
+     * Zwracany jako string w formacie & — np. "&5" dla fioletowego.
+     *
+     * Dlaczego: LP prefix może mieć kolor np. "§5[VIP] " albo "&5[VIP] ".
+     * Wyciągamy ten kolor, by w formacie czatu nick gracza miał taki sam
+     * kolor jak jego prefix LP — bez hardcoded wartości w config.
+     *
+     * Pomija kody formatowania (l/o/n/m/k) — bierze tylko prawdziwe kolory (0-9, a-f).
+     * Jeśli prefix nie ma żadnego koloru → zwraca "&f" (biały).
+     */
+    private String extractLastColorCode(String s) {
+        if (s == null || s.isEmpty()) return "&f";
+        String lastColor = "&f";
+        for (int i = 0; i < s.length() - 1; i++) {
+            char c = s.charAt(i);
+            if (c == '§' || c == '&') {
+                char code = Character.toLowerCase(s.charAt(i + 1));
+                // Tylko kolory, nie formatowania
+                if ("0123456789abcdef".indexOf(code) >= 0) {
+                    lastColor = "&" + code;
+                }
+            }
+        }
+        return lastColor;
     }
 
     /**
