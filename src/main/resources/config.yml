@@ -62,7 +62,11 @@ url-filter:
 # ── VIP Rank Notification ─────────────────────────────────────
 vip-notification:
   enabled: true
-  message: "&6✦ &5VIP &e{player} &6joined the server! &6✦"
+  # Lista grup które dostają specjalny komunikat dołączenia/odejścia.
+  # Format automatyczny: §6✦ <LP prefix grupy> <nick> §6joined/left the server! §6✦
+  # Dodaj kolejne grupy: [vip, svip, mvp, admin]
+  notification-groups: [vip]
+  # Backwards compat (używane gdy notification-groups jest puste)
   vip-group: "vip"
 
 # ── Chat Lock ─────────────────────────────────────────────────
