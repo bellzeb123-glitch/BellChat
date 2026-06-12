@@ -1,6 +1,7 @@
 # ============================================================
-#  BellChat v2.2 - Messages (English)
+#  BellChat 1.26.1.2 — Messages (English)
 # ============================================================
+
 prefix: "&8[&6BellChat&8] "
 
 # ── Private messages ─────────────────────────────────────────
@@ -48,13 +49,36 @@ url-blocked: "&cLinks are not allowed in chat."
 # ── General ──────────────────────────────────────────────────
 no-permission: "&cYou do not have permission."
 player-only: "&cOnly players can use this command."
-invalid-args: "&cInvalid arguments. Use &f/bc help"
+invalid-args: "&cInvalid arguments. Use &f/bch help"
 reload-done: "&aConfiguration reloaded."
+language-changed: "&7Language changed to: &f{lang}"
+language-invalid: "&cAvailable languages: &fen&c, &fpl"
+language-usage: "&cUsage: &f/bch lang <en|pl>"
 
-# ── v2.0: Channels ───────────────────────────────────────────
+# ── Channels ─────────────────────────────────────────────────
 channel-not-found: "&cChannel &f{channel} &cnot found."
 channel-disabled: "&cChannel &f{channel} &cis disabled."
 channel-switched: "&7Switched to channel &f{channel}&7."
 channel-current: "&7Current channel: &f{channel}&7."
 channel-party-not-member: "&cYou are not a member of this party."
 channel-party-disbanded: "&cThe party was disbanded."
+channel-overview-header: "&6Active channels:"
+
+# ── Help — main commands ─────────────────────────────────────
+help-header: "&6=== BellChat v{version} ==="
+help-msg: "&7/msg &f<player> <message> &8— &7Send a private message"
+help-reply: "&7/r &f<message> &8— &7Reply to last PM"
+help-ignore: "&7/ignore &f<player> &8— &7Ignore or unignore a player"
+help-ch: "&7/ch &f[channel] &8— &7Switch chat channel"
+
+# ── Help — admin commands ────────────────────────────────────
+help-admin-header: "&8--- &6Admin Commands &8---"
+help-admin-gui: "&7/bch gui &8— &7Open admin panel"
+help-admin-lang: "&7/bch lang &f<en|pl> &8— &7Change language"
+help-admin-mute: "&7/bch mute &f<player> [duration] [reason] &8— &7Mute a player"
+help-admin-unmute: "&7/bch unmute &f<player> &8— &7Unmute a player"
+help-admin-clearchat: "&7/bch clearchat &8(/bch cc) &8— &7Clear chat for everyone"
+help-admin-chatlock: "&7/bch chatlock &8(/bch cl) &8— &7Lock/unlock chat"
+help-admin-spy: "&7/bch spy &8— &7Toggle private message spy"
+help-admin-ch: "&7/bch ch &8— &7Channel overview"
+help-admin-reload: "&7/bch reload &8— &7Reload configuration"

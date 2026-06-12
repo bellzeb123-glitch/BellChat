@@ -5,7 +5,14 @@ import org.bukkit.entity.Player;
 import pl.bell.bellchat.BellChat;
 
 import java.util.List;
+import java.util.Map;
 
+/**
+ * /bch — główna komenda admina BellChat.
+ *
+ * Wszystkie teksty pomocy pobierane są z MessageManager (plik językowy).
+ * Hardkodowanych tekstów BRAK — wszystko respektuje ustawienie language: w config.
+ */
 public class BellChatCommand implements CommandExecutor, TabCompleter {
 
     private final BellChat plugin;
@@ -49,25 +56,21 @@ public class BellChatCommand implements CommandExecutor, TabCompleter {
                 yield true;
             }
 
-            // /bc lang <en|pl> — zmiana języka
             case "lang" -> {
                 if (!sender.hasPermission("bellchat.admin")) { msg.send(sender, "no-permission"); yield true; }
                 if (args.length < 2) {
-                    sender.sendMessage(plugin.getMessageManager().getPrefix()
-                            + "§cUsage: §f/bch lang <en|pl>");
+                    msg.send(sender, "language-usage");
                     yield true;
                 }
                 String lang = args[1].toLowerCase();
                 if (!lang.equals("en") && !lang.equals("pl")) {
-                    sender.sendMessage(plugin.getMessageManager().getPrefix()
-                            + "§cAvailable languages: §fen§c, §fpl");
+                    msg.send(sender, "language-invalid");
                     yield true;
                 }
                 plugin.getConfig().set("language", lang);
                 plugin.saveConfig();
                 plugin.reload();
-                sender.sendMessage(plugin.getMessageManager().getPrefix()
-                        + "§7Language changed to: §f" + lang.toUpperCase());
+                msg.send(sender, "language-changed", Map.of("lang", lang.toUpperCase()));
                 yield true;
             }
 
@@ -111,31 +114,43 @@ public class BellChatCommand implements CommandExecutor, TabCompleter {
         };
     }
 
+    /**
+     * Wyświetla pomoc używając WYŁĄCZNIE kluczy z pliku językowego.
+     * Żadnych hardkodowanych tekstów — pełne respektowanie language: en|pl.
+     */
     private void sendHelp(CommandSender sender) {
-        sender.sendMessage("§6=== BellChat v2 ===");
-        sender.sendMessage("§7/msg §f<player> <msg> §8— §7Private message");
-        sender.sendMessage("§7/r §f<msg> §8— §7Reply to PM");
-        sender.sendMessage("§7/ignore §f<player> §8— §7Ignore/unignore");
-        sender.sendMessage("§7/ch §f[channel] §8— §7Switch channel");
+        var msg = plugin.getMessageManager();
+        String version = plugin.getDescription().getVersion();
+
+        // Nagłówek z wersją
+        sender.sendMessage(msg.get("help-header").replace("{version}", version));
+
+        // Komendy graczy
+        sender.sendMessage(msg.get("help-msg"));
+        sender.sendMessage(msg.get("help-reply"));
+        sender.sendMessage(msg.get("help-ignore"));
+        sender.sendMessage(msg.get("help-ch"));
+
+        // Sekcja admina — tylko jeśli ma uprawnienia
         if (sender.hasPermission("bellchat.admin")) {
-            sender.sendMessage("§8--- §6Admin §8---");
-            sender.sendMessage("§7/bc gui §8— §7Panel admina (GUI)");
-            sender.sendMessage("§7/bc lang §f<en|pl> §8— §7Zmień język");
-            sender.sendMessage("§7/bc mute §f<gracz> [czas] [powód]");
-            sender.sendMessage("§7/bc unmute §f<gracz>");
-            sender.sendMessage("§7/bc clearchat §8(/bc cc)");
-            sender.sendMessage("§7/bc chatlock §8(/bc cl)");
-            sender.sendMessage("§7/bc spy §8— §7Toggle spy mode");
-            sender.sendMessage("§7/bc ch §8— §7Przegląd kanałów");
-            sender.sendMessage("§7/bc reload §8— §7Przeładuj config");
+            sender.sendMessage(msg.get("help-admin-header"));
+            sender.sendMessage(msg.get("help-admin-gui"));
+            sender.sendMessage(msg.get("help-admin-lang"));
+            sender.sendMessage(msg.get("help-admin-mute"));
+            sender.sendMessage(msg.get("help-admin-unmute"));
+            sender.sendMessage(msg.get("help-admin-clearchat"));
+            sender.sendMessage(msg.get("help-admin-chatlock"));
+            sender.sendMessage(msg.get("help-admin-spy"));
+            sender.sendMessage(msg.get("help-admin-ch"));
+            sender.sendMessage(msg.get("help-admin-reload"));
         }
     }
 
     private void sendChannelOverview(CommandSender sender) {
-        sender.sendMessage("§6Active channels:");
+        sender.sendMessage(plugin.getMessageManager().get("channel-overview-header"));
         plugin.getChannelManager().getChannels().forEach((id, ch) ->
                 sender.sendMessage("  §7" + id + " §8| §f" + ch.getType().name()
-                        + " §8| " + (ch.isEnabled() ? "§aactive" : "§cdisabled")));
+                        + " §8| " + (ch.isEnabled() ? "§a✔" : "§c✘")));
     }
 
     private String[] dropFirst(String[] args) {
