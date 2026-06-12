@@ -10,26 +10,21 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import pl.bell.bellchat.BellChat;
 
 /**
- * VIPJoinListener v2.4 — dynamiczne komunikaty per-grupa.
+ * VIPJoinListener v3.0 — komunikaty wejścia/wyjścia z plików językowych.
  *
- * Zamiast hardkodować grupy, automatycznie czyta z LuckPerms:
- *   - prefix grupy (np. "&5[VIP]" lub "&4[SVIP]") → kolor + nazwa
- *   - primaryGroup gracza
+ * Teksty pobierane z MessageManager (messages_en/pl.yml), więc /bch lang
+ * automatycznie przełącza też język komunikatów logowania.
  *
- * Config: notification-groups — lista grup które dostają specjalny komunikat.
- * Jeśli grupy nie ma na liście → standardowy komunikat.
+ * Format DYNAMICZNY — kolor i prefix z LP:
+ *   Grupa z notification-groups → klucz join-notify-group / quit-notify-group
+ *     {prefix}   = prefix grupy z LP (zachowuje kolor, np. "§5[VIP] ")
+ *     {lp-color} = ostatni kolor z prefiksu (dla nicku)
+ *   Inni gracze → join-normal / quit-normal
  *
- * Przykład config:
- *   vip-notification:
- *     enabled: true
- *     notification-groups: [vip, svip, mvp]
- *
- * Format komunikatu (automatyczny):
- *   Join: §6✦ <prefix_grupy><nick> §6joined the server! §6✦
- *   Quit: §6✦ <prefix_grupy><nick> §6left the server! §6✦
- *
- * Gdzie <prefix_grupy> pochodzi bezpośrednio z LP prefix grupy.
- * Np. LP prefix VIP = "&5[VIP] " → komunikat: §6✦ §5[VIP] §5Nick §6joined the server! §6✦
+ * Dodanie nowej grupy (np. SVIP):
+ *   1. /lp group svip meta addprefix 100 "&4[SVIP] "
+ *   2. config: notification-groups: [vip, svip]
+ *   Komunikat automatycznie dostanie czerwony [SVIP] z LP — bez zmian w kodzie.
  */
 public class VIPJoinListener implements Listener {
 
@@ -56,87 +51,56 @@ public class VIPJoinListener implements Listener {
     // ── Builder ───────────────────────────────────────────────
 
     private String buildMessage(Player player, boolean joining) {
+        var msg = plugin.getMessageManager();
         boolean notifEnabled = plugin.getConfig()
                 .getBoolean("vip-notification.enabled", true);
 
         if (notifEnabled && isNotifiableGroup(player)) {
-            return buildGroupMessage(player, joining);
+            // Komunikat grupowy — dynamiczny prefix + kolor z LP
+            String lpPrefix = plugin.getLuckPermsManager().getPrefix(player);
+            String prefix   = (lpPrefix != null ? lpPrefix : "").replace("&", "§");
+            if (!prefix.isEmpty() && !prefix.endsWith(" ")) prefix = prefix + " ";
+            String lpColor  = extractLastColor(prefix);
+
+            String key = joining ? "join-notify-group" : "quit-notify-group";
+            return msg.get(key)
+                    .replace("{prefix}",   prefix)
+                    .replace("{lp-color}", lpColor)
+                    .replace("{player}",   player.getName());
         } else {
-            // Standardowy komunikat dla zwykłych graczy
-            String action = joining ? "joined the game" : "left the game";
-            return "§6✦ §e" + player.getName() + " §6" + action + ". §6✦";
+            // Komunikat standardowy
+            String key = joining ? "join-normal" : "quit-normal";
+            return msg.get(key).replace("{player}", player.getName());
         }
     }
 
-    /**
-     * Buduje komunikat używając prefiksu grupy z LuckPerms.
-     *
-     * LP prefix np. "&5[VIP] " jest konwertowany do §-kodów.
-     * Kolor ostatniego §x z prefiksu jest używany dla nicku gracza.
-     */
-    private String buildGroupMessage(Player player, boolean joining) {
-        String lpPrefix = plugin.getLuckPermsManager().getPrefix(player);
-        String action   = joining ? "joined the server" : "left the server";
-
-        if (lpPrefix == null || lpPrefix.isBlank()) {
-            // Brak prefiksu w LP — użyj nazwy grupy z wielką literą
-            String group = capitalize(plugin.getLuckPermsManager().getPrimaryGroup(player));
-            return "§6✦ §e" + group + " §e" + player.getName()
-                    + " §6" + action + "! §6✦";
-        }
-
-        // Konwertuj &-kody z LP na §-kody
-        String prefix = lpPrefix.replace("&", "§").trim();
-
-        // Wyciągnij ostatni kod koloru z prefiksu żeby nick był tym samym kolorem
-        String nickColor = extractLastColor(prefix);
-
-        return "§6✦ " + prefix + " " + nickColor + player.getName()
-                + " §6" + action + "! §6✦";
-    }
-
-    /**
-     * Sprawdza czy gracz należy do grupy z listy notification-groups.
-     * Jeśli lista pusta lub nieobecna → używa starego klucza vip-group.
-     */
     private boolean isNotifiableGroup(Player player) {
         var groups = plugin.getConfig()
                 .getStringList("vip-notification.notification-groups");
-
         String primary = plugin.getLuckPermsManager().getPrimaryGroup(player);
         if (primary == null) return false;
 
         if (groups.isEmpty()) {
-            // Backwards compat — stary klucz vip-group
+            // Backwards compat
             String vipGroup = plugin.getConfig()
                     .getString("vip-notification.vip-group", "vip");
             return vipGroup.equalsIgnoreCase(primary);
         }
-
         return groups.stream().anyMatch(g -> g.equalsIgnoreCase(primary));
     }
 
     /**
-     * Wyciąga ostatni kod koloru (§x) z końca stringa.
-     * Np. "§5[VIP]" → "§5", "§4[SVIP]§l" → "§4"
-     * Pomija kody formatowania (§l §o §n §m §k), bierze tylko kolor.
+     * Wyciąga ostatni kod koloru (§x) z prefiksu — dla koloru nicku.
+     * Pomija kody formatowania (l/o/n/m/k). Domyślnie §f.
      */
     private String extractLastColor(String s) {
-        String lastColor = "§f"; // domyślnie biały
+        String last = "§f";
         for (int i = 0; i < s.length() - 1; i++) {
             if (s.charAt(i) == '§') {
-                char code = s.charAt(i + 1);
-                // Tylko kody kolorów (0-9, a-f), nie formatowania (k,l,m,n,o,r)
-                if ("0123456789abcdef".indexOf(code) >= 0) {
-                    lastColor = "§" + code;
-                }
+                char code = Character.toLowerCase(s.charAt(i + 1));
+                if ("0123456789abcdef".indexOf(code) >= 0) last = "§" + code;
             }
         }
-        return lastColor;
-    }
-
-    private String capitalize(String s) {
-        if (s == null || s.isBlank()) return s;
-        return Character.toUpperCase(s.charAt(0)) + s.substring(1).toLowerCase();
+        return last;
     }
 }

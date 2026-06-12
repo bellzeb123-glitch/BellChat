@@ -163,3 +163,10 @@ gui-muted-page-info: "&7Strona "
 # ── AdminGUI — wiadomości zwrotne ────────────────────────────
 gui-toggle-enabled: "&f{feature} &awłączone&7."
 gui-toggle-disabled: "&f{feature} &cwyłączone&7."
+
+# ── Komunikaty wejścia / wyjścia ─────────────────────────────
+# {player} = nick gracza, {prefix} = prefix grupy z LP (z kolorem), {lp-color} = kolor grupy
+join-normal: "&6✦ &e{player} &6dołączył do gry. &6✦"
+quit-normal: "&6✦ &e{player} &6opuścił grę. &6✦"
+join-notify-group: "&6✦ {prefix}{lp-color}{player} &6dołączył do serwera! &6✦"
+quit-notify-group: "&6✦ {prefix}{lp-color}{player} &6opuścił serwer! &6✦"
