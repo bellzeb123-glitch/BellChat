@@ -82,3 +82,84 @@ help-admin-chatlock: "&7/bch chatlock &8(/bch cl) &8— &7Zablokuj/odblokuj chat
 help-admin-spy: "&7/bch spy &8— &7Włącz/wyłącz spy"
 help-admin-ch: "&7/bch ch &8— &7Przegląd kanałów"
 help-admin-reload: "&7/bch reload &8— &7Przeładuj konfigurację"
+
+# ── AdminGUI — tytuły okien ──────────────────────────────────
+gui-title-settings: "&6BellChat &8» &fUstawienia"
+gui-title-channels: "&6BellChat &8» &fKanały"
+gui-title-muted: "&6BellChat &8» &fWyciszeni gracze"
+
+# ── AdminGUI — nazwy przełączników ───────────────────────────
+gui-toggle-antispam: "Antyspam"
+gui-toggle-profanity: "Filtr wulgaryzmów"
+gui-toggle-vip-notif: "Powiadomienie VIP"
+gui-toggle-chatlock: "Blokada chatu"
+gui-toggle-url-filter: "Filtr URL"
+gui-toggle-emoji: "Emoji"
+gui-toggle-broadcasts: "Auto-Broadcasty"
+gui-toggle-hover-click: "Hover/Klik na nicku"
+gui-toggle-duplicate: "Blokuj duplikaty"
+
+# ── AdminGUI — opisy przełączników ───────────────────────────
+gui-desc-vip-notif-1: "Powiadamia gdy gracz"
+gui-desc-vip-notif-2: "z grupy VIP dołącza do serwera."
+gui-desc-url-filter-1: "Blokuje linki w chacie."
+gui-desc-url-filter-2: "Gracze z bellchat.url.bypass"
+gui-desc-url-filter-3: "omijają filtr."
+gui-desc-emoji-1: "Zamienia :smile: na emoji."
+gui-desc-emoji-2: "Wymaga uprawnienia:"
+gui-desc-emoji-3: "bellchat.emoji"
+gui-desc-broadcasts-1: "Cykliczne wiadomości"
+gui-desc-broadcasts-2: "do wszystkich graczy."
+gui-desc-hover-1: "Klik na nazwę gracza"
+gui-desc-hover-2: "otwiera /msg <gracz>."
+gui-desc-duplicate-1: "Blokuje wysyłanie tej samej"
+gui-desc-duplicate-2: "wiadomości dwa razy z rzędu."
+gui-desc-chatlock-1: "Blokuje pisanie graczom"
+gui-desc-chatlock-2: "bez bellchat.chatlock.bypass"
+
+# ── AdminGUI — wspólne ───────────────────────────────────────
+gui-status-enabled: "&aWłączone &a✔"
+gui-status-disabled: "&cWyłączone &c✘"
+gui-status-locked: "&cZablokowany &c✘"
+gui-status-unlocked: "&aOdblokowany &a✔"
+gui-click-toggle: "&7Kliknij aby przełączyć"
+gui-separator: "&8──────────────"
+
+# ── AdminGUI — dolny pasek ───────────────────────────────────
+gui-btn-channels: "&b&lKanały"
+gui-btn-channels-desc-1: "Podgląd kanałów"
+gui-btn-channels-desc-2: "i liczby graczy"
+gui-btn-muted: "&c&lWyciszeni"
+gui-btn-muted-desc: "Zarządzaj wyciszonymi"
+gui-btn-reload: "&e&lReload"
+gui-btn-reload-desc: "Przeładuj konfigurację"
+gui-btn-back: "&f&l← Powrót"
+gui-btn-back-desc: "Wróć do Ustawień"
+
+# ── AdminGUI — zakładka kanałów ──────────────────────────────
+gui-channels-title: "&6&lKanały czatu"
+gui-channels-subtitle: "&7Aktywne kanały i gracze online"
+gui-channels-type: "&8Typ: &7"
+gui-channels-players: "&8Graczy: &f"
+gui-channels-permission: "&7Uprawnienie: &f"
+gui-channels-open: "&7Otwarty dla wszystkich"
+gui-channels-radius: "&7Promień: &f"
+gui-channels-blocks: " bloków"
+
+# ── AdminGUI — zakładka wyciszonych ──────────────────────────
+gui-muted-title: "&c&lWyciszeni gracze"
+gui-muted-total: "&7Łącznie: &f"
+gui-muted-page: "&7Strona: &f"
+gui-muted-right-click: "&cPrawy klik = odcisz"
+gui-muted-by: "&7Przez: &f"
+gui-muted-reason: "&7Powód: &f"
+gui-muted-expires: "&7Wygasa: &f"
+gui-muted-never: "nigdy"
+gui-muted-unmuted: "&aOdciszono gracza &f{player}&a."
+gui-muted-prev: "&f&l← Poprzednia"
+gui-muted-next: "&f&lNastępna →"
+gui-muted-page-info: "&7Strona "
+
+# ── AdminGUI — wiadomości zwrotne ────────────────────────────
+gui-toggle-enabled: "&f{feature} &awłączone&7."
+gui-toggle-disabled: "&f{feature} &cwyłączone&7."

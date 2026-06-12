@@ -129,3 +129,11 @@ channels:
     format: "&8[&cADM&8] &6{prefix}&6{player}&6:&f {message}"
     required-permission: "bellchat.channel.admin"
     enabled: true
+
+# ── Tablist (lista graczy pod TAB) ────────────────────────────
+# Ustawia czysty format nicku w TAB liście.
+# Bez tego serwer może pokazywać zlepiony "VIPNickVIP".
+# {prefix} = prefix grupy z LP (z kolorem), {player} = nick
+tablist:
+  enabled: true
+  format: "{prefix}{player}"

@@ -6,18 +6,16 @@ import pl.bell.bellchat.channel.ChannelManager;
 import pl.bell.bellchat.commands.*;
 import pl.bell.bellchat.gui.AdminGUI;
 import pl.bell.bellchat.listeners.ChatListener;
+import pl.bell.bellchat.listeners.TablistListener;
 import pl.bell.bellchat.listeners.VIPJoinListener;
 import pl.bell.bellchat.managers.*;
 
 /**
  * BellChat v1.26.1.2
  *
- * Główna klasa pluginu.
- *
- * NAPRAWY w tej wersji:
- * - reload() faktycznie przeładowuje WSZYSTKIE managery (nie tylko config)
- * - dzięki temu /bch lang en|pl faktycznie zmienia język
- * - banner gold ASCII art zachowany
+ * NAPRAWY:
+ * - reload() przeładowuje WSZYSTKIE managery (w tym MessageManager → /bch lang działa)
+ * - TablistListener — czysty format nicku w TAB ([VIP] Nick z kolorem z LP)
  */
 public class BellChat extends JavaPlugin {
 
@@ -35,6 +33,7 @@ public class BellChat extends JavaPlugin {
     private EmojiManager      emojiManager;
     private UrlFilterManager  urlFilterManager;
     private BroadcastManager  broadcastManager;
+    private TablistListener   tablistListener;
 
     @Override
     public void onEnable() {
@@ -42,7 +41,6 @@ public class BellChat extends JavaPlugin {
         saveDefaultConfig();
         printBanner();
 
-        // ── Managers ──────────────────────────────────────────
         this.messageManager   = new MessageManager(this);
         this.luckPermsManager = new LuckPermsManager(this);
         this.muteManager      = new MuteManager(this);
@@ -59,12 +57,14 @@ public class BellChat extends JavaPlugin {
         this.emojiManager     = new EmojiManager(this);
         this.urlFilterManager = new UrlFilterManager(this);
         this.broadcastManager = new BroadcastManager(this);
+        this.tablistListener  = new TablistListener(this);
 
-        // ── Listeners ─────────────────────────────────────────
+        // Listeners
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
         getServer().getPluginManager().registerEvents(new VIPJoinListener(this), this);
+        getServer().getPluginManager().registerEvents(tablistListener, this);
 
-        // ── Commands ──────────────────────────────────────────
+        // Commands
         reg("bellchat",  new BellChatCommand(this));
         reg("ch",        new ChannelCommand(this));
         reg("msg",       new MsgCommand(this));
@@ -90,28 +90,20 @@ public class BellChat extends JavaPlugin {
     }
 
     /**
-     * FIX: reload() teraz faktycznie przeładowuje WSZYSTKIE managery.
-     * Poprzednia wersja wywoływała tylko reloadConfig() — przez co
-     * /bch lang en|pl nie miało żadnego efektu (MessageManager
-     * nadal trzymał stary plik językowy w pamięci).
+     * FIX: reload() przeładowuje WSZYSTKIE managery.
+     * Bez tego /bch lang nie działało (MessageManager nie był przeładowywany).
      */
     public void reload() {
-        // 1. Najpierw przeładuj config z dysku
         reloadConfig();
-
-        // 2. Potem każdy manager — kolejność ważna:
-        //    - MessageManager jako pierwszy (inne używają komunikatów)
         if (messageManager   != null) messageManager.reload();
         if (channelManager   != null) channelManager.reload();
         if (emojiManager     != null) emojiManager.reload();
         if (urlFilterManager != null) urlFilterManager.reload();
         if (broadcastManager != null) broadcastManager.reload();
         if (antispamManager  != null) antispamManager.reload();
-
+        if (tablistListener  != null) tablistListener.refreshAll();
         getLogger().info("BellChat reloaded.");
     }
-
-    // ── Banner ────────────────────────────────────────────────
 
     private void printBanner() {
         var c = org.bukkit.Bukkit.getConsoleSender();
@@ -136,8 +128,6 @@ public class BellChat extends JavaPlugin {
         if (exec instanceof org.bukkit.command.TabCompleter tc) cmd.setTabCompleter(tc);
     }
 
-    // ── Getters ───────────────────────────────────────────────
-
     public static BellChat getInstance()             { return instance; }
     public MessageManager getMessageManager()        { return messageManager; }
     public LuckPermsManager getLuckPermsManager()    { return luckPermsManager; }
@@ -151,4 +141,5 @@ public class BellChat extends JavaPlugin {
     public EmojiManager getEmojiManager()            { return emojiManager; }
     public UrlFilterManager getUrlFilterManager()    { return urlFilterManager; }
     public BroadcastManager getBroadcastManager()    { return broadcastManager; }
+    public TablistListener getTablistListener()      { return tablistListener; }
 }
