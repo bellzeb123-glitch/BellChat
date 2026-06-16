@@ -134,6 +134,11 @@ public class AdminGUI implements Listener {
             if (ch.getType().name().equals("LOCAL"))
                 lore.add(color(t("gui-channels-radius") + ch.getLocalRadius() + t("gui-channels-blocks")));
             lore.add(color(ch.isEnabled() ? t("gui-status-enabled") : t("gui-status-disabled")));
+            lore.add(color(t("gui-separator")));
+            // Global to kanał domyślny — fallback dla wszystkich, nie da się wyłączyć.
+            lore.add(color(plugin.getChannelManager().isDefaultChannel(ch.getId())
+                    ? t("gui-channels-global-locked")
+                    : t("gui-click-toggle")));
 
             Material mat = switch (ch.getType()) {
                 case GLOBAL -> Material.GRASS_BLOCK;
@@ -220,8 +225,7 @@ public class AdminGUI implements Listener {
                 || event.getCurrentItem().getType() == Material.GRAY_STAINED_GLASS_PANE) return;
 
         if (title.equals(titleSettings())) handleSettings(admin, event.getSlot());
-        else if (title.equals(titleChannels()) && event.getSlot() == 45)
-            Bukkit.getScheduler().runTask(plugin, () -> openSettings(admin));
+        else if (title.equals(titleChannels())) handleChannels(admin, event.getSlot());
         else if (title.equals(titleMuted())) handleMuted(admin, event);
     }
 
@@ -255,6 +259,40 @@ public class AdminGUI implements Listener {
                 Bukkit.getScheduler().runTask(plugin, () -> openSettings(admin));
             }
         }
+    }
+
+    /**
+     * Obsługa kliknięć w zakładce kanałów.
+     *
+     * - Slot 45 → powrót do ustawień.
+     * - Sloty 10–43 → kliknięcie na kanał włącza/wyłącza go.
+     *   Kolejność itemów odpowiada kolejności kanałów (slot = 10 + indeks),
+     *   więc indeks kanału = slot - 10.
+     * - Kanału global (domyślnego) nie da się wyłączyć.
+     */
+    private void handleChannels(Player admin, int slot) {
+        if (slot == 45) {
+            Bukkit.getScheduler().runTask(plugin, () -> openSettings(admin));
+            return;
+        }
+        if (slot < 10 || slot > 43) return;
+
+        List<Channel> list = new ArrayList<>(plugin.getChannelManager().getChannels().values());
+        int idx = slot - 10;
+        if (idx < 0 || idx >= list.size()) return;
+
+        Channel ch = list.get(idx);
+
+        if (plugin.getChannelManager().isDefaultChannel(ch.getId())) {
+            admin.sendMessage(plugin.getMessageManager().getPrefix()
+                    + color(t("gui-channels-global-locked")));
+            return;
+        }
+
+        boolean next = !ch.isEnabled();
+        plugin.getChannelManager().setChannelEnabled(ch.getId(), next);
+        sendToggleMsg(admin, color(ch.getDisplayName()), next);
+        Bukkit.getScheduler().runTask(plugin, () -> openChannels(admin));
     }
 
     private void handleMuted(Player admin, InventoryClickEvent event) {

@@ -87,6 +87,46 @@ public class ChannelManager {
         playerChannels.entrySet().removeIf(e -> !channels.containsKey(e.getValue()));
     }
 
+    /**
+     * Włącza/wyłącza kanał z poziomu admina (GUI).
+     *
+     * - Zapisuje stan do config.yml (channels.<id>.enabled) → trwałe po restarcie.
+     * - Po WYŁĄCZENIU: każdy gracz aktualnie na tym kanale jest natychmiast
+     *   przenoszony z powrotem na kanał domyślny (global) i dostaje komunikat.
+     *   Dzięki temu nikt nie zostaje "uwięziony" na wyłączonym kanale.
+     *
+     * Kanału domyślnego (global) nie da się wyłączyć — to fallback dla wszystkich.
+     *
+     * @return false jeśli kanał nie istnieje lub jest to kanał domyślny.
+     */
+    public boolean setChannelEnabled(String id, boolean enabled) {
+        Channel ch = channels.get(id.toLowerCase());
+        if (ch == null) return false;
+        if (ch.getId().equals(DEFAULT_CHANNEL)) return false; // global zawsze włączony
+
+        ch.setEnabled(enabled);
+        plugin.getConfig().set("channels." + ch.getId() + ".enabled", enabled);
+        plugin.saveConfig();
+
+        if (!enabled) {
+            for (Map.Entry<UUID, String> e : playerChannels.entrySet()) {
+                if (!e.getValue().equals(ch.getId())) continue;
+                e.setValue(DEFAULT_CHANNEL);
+                Player p = Bukkit.getPlayer(e.getKey());
+                if (p != null) {
+                    plugin.getMessageManager().send(p, "channel-disabled-moved",
+                            Map.of("channel", plugin.getMessageManager().color(ch.getDisplayName())));
+                }
+            }
+        }
+        return true;
+    }
+
+    /** Czy kanał o danym id to kanał domyślny (global), którego nie wolno wyłączyć. */
+    public boolean isDefaultChannel(String id) {
+        return DEFAULT_CHANNEL.equalsIgnoreCase(id);
+    }
+
     private void loadDefaults() {
         channels.put("global", new Channel("global", ChannelType.GLOBAL,
                 "&aGlobal", "&f{player}&f: {message}", -1, null, true));

@@ -1,0 +1,139 @@
+# ============================================================
+#  BellChat v2.2 - Configuration
+# ============================================================
+
+language: "en"
+
+# ── Chat Format ───────────────────────────────────────────────
+chat-format: "&f{player}&f: {message}"
+
+# Format chatu per-grupa LuckPerms.
+# {prefix}   = prefix grupy z LP (zachowuje swój oryginalny kolor)
+# {lp-color} = ostatni kolor z LP prefix — używaj go dla {player} i :
+# {player}   = nazwa gracza
+# {message}  = treść wiadomości (zawsze biała &f z kodu)
+#
+# Dzięki {lp-color} dodanie nowej grupy NIE wymaga zmiany w configu —
+# wystarczy ustawić prefix w LP: /lp group <grupa> meta setprefix "&X[NAME] "
+group-formats:
+  default: "&f{player}&f: {message}"
+  vip:     "{prefix}{lp-color}{player}{lp-color}:&f {message}"
+  admin:   "{prefix}{lp-color}{player}{lp-color}:&f {message}"
+  # Universal — używaj tego dla wszystkich grup które dostają prefix w LP
+  # Kolor wyciągany automatycznie z LP prefix.
+
+# ── Hover + Click na nicku ────────────────────────────────────
+# Gdy enabled: true, kliknięcie na nick otwiera /msg <gracz>
+# Najechanie pokazuje rangę gracza i podpowiedź
+chat:
+  hover-click:
+    enabled: true
+    # Co pokazuje hover (najechanie na nick)
+    # Placeholder: {rank} = nazwa grupy LP (np. "Vip", "Admin", "Default")
+    hover-line1: "&7✦ Ranga: &f{rank}"
+    hover-line2: "&7⚔ &7Kliknij aby napisać"
+    separator:   "&8──────────────"
+    # Komenda wykonywana przy kliknięciu (suggest = gracz musi dopisać treść)
+    # Placeholder: {player} = nazwa gracza
+    click-command: "/msg {player} "
+
+# ── Private Messages ──────────────────────────────────────────
+msg-format-sender:   "&9[PRIV] &fTy &9→ &f{receiver}&9: &f{message}"
+msg-format-receiver: "&9[PRIV] &f{sender} &9→ &fTy&9: &f{message}"
+
+# ── Antispam ──────────────────────────────────────────────────
+antispam:
+  enabled: false
+  cooldown-seconds: 3
+  block-duplicate: true
+
+# ── Mention Ping ──────────────────────────────────────────────
+mention:
+  enabled: true
+  sound: "ENTITY_EXPERIENCE_ORB_PICKUP"
+  highlight-color: "&e@"
+
+# ── Profanity Filter ──────────────────────────────────────────
+profanity-filter:
+  enabled: false
+  replacement: "***"
+  words:
+    - "badword1"
+    - "badword2"
+
+# ── URL Filter ────────────────────────────────────────────────
+url-filter:
+  enabled: false
+  mode: "block"
+  replacement: "&8[&clink&8]"
+  whitelist:
+    - "twojserwer.pl"
+
+# ── VIP Rank Notification ─────────────────────────────────────
+vip-notification:
+  enabled: true
+  # Lista grup które dostają specjalny komunikat dołączenia/odejścia.
+  # Format automatyczny: §6✦ <LP prefix grupy> <nick> §6joined/left the server! §6✦
+  # Dodaj kolejne grupy: [vip, svip, mvp, admin]
+  notification-groups: [vip]
+  # Backwards compat (używane gdy notification-groups jest puste)
+  vip-group: "vip"
+
+# ── Chat Lock ─────────────────────────────────────────────────
+chatlock:
+  locked-message: "&cChat jest aktualnie zablokowany."
+
+# ── Auto-Broadcasts ───────────────────────────────────────────
+broadcasts:
+  enabled: false
+  slots:
+    slot1:
+      enabled: true
+      interval-seconds: 300
+      random: false
+      messages:
+        - "&8[&6Bell&8] &fZapraszamy na nasz serwer Discord!"
+        - "&8[&6Bell&8] &fSprawdź sklep: &e/bm"
+    slot2:
+      enabled: false
+      interval-seconds: 600
+      random: true
+      messages:
+        - "&8[&6Bell&8] &fDołącz do VIP aby odblokować ekskluzywne funkcje!"
+
+# ── v2.0: Kanały ──────────────────────────────────────────────
+channels:
+  global:
+    type: GLOBAL
+    display-name: "&aGlobal"
+    format: "&f{player}&f: {message}"
+    enabled: true
+
+  local:
+    type: LOCAL
+    display-name: "&eLocal"
+    format: "&8[&eL&8] &f{player}&f: {message}"
+    local-radius: 100
+    enabled: true
+
+  vip:
+    type: VIP
+    display-name: "&5VIP"
+    format: "&8[&5VIP&8] &5{prefix}&5{player}&5:&f {message}"
+    required-permission: "bellchat.channel.vip"
+    enabled: true
+
+  admin:
+    type: ADMIN
+    display-name: "&cAdmin"
+    format: "&8[&cADM&8] &6{prefix}&6{player}&6:&f {message}"
+    required-permission: "bellchat.channel.admin"
+    enabled: true
+
+# ── Tablist (lista graczy pod TAB) ────────────────────────────
+# Ustawia czysty format nicku w TAB liście.
+# Bez tego serwer może pokazywać zlepiony "VIPNickVIP".
+# {prefix} = prefix grupy z LP (z kolorem), {player} = nick
+tablist:
+  enabled: true
+  format: "{prefix}{player}"
