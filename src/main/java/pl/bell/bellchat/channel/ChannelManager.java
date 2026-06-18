@@ -28,6 +28,15 @@ public class ChannelManager {
     // Używamy go żeby wiedzieć gdzie wstawić klikalny komponent nicka
     private static final Pattern PLAYER_PLACEHOLDER = Pattern.compile("\\{player}|\\{displayname}");
 
+    // Serializer czatu z obsługą kolorów HEX (format &x&R&R&G&G&B&B — Bungee/Essentials).
+    // Dzięki temu addon BellChatPro może wstrzykiwać kolory HEX/gradienty przez
+    // BellChatMessageEvent.setMessage(...). W pełni kompatybilny wstecz ze zwykłymi &-kodami.
+    private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.builder()
+            .character('&')
+            .hexColors()
+            .useUnusualXRepeatedCharacterHexFormat()
+            .build();
+
     private final BellChat plugin;
     private final Logger log;
 
@@ -294,14 +303,14 @@ public class ChannelManager {
             String full = withPlaceholders
                     .replace("{player}",      sender.getName())
                     .replace("{displayname}", sender.getName());
-            return withAfkTag(sender, LegacyComponentSerializer.legacyAmpersand().deserialize(full));
+            return withAfkTag(sender, LEGACY.deserialize(full));
         }
 
         // Podziel format na część PRZED nickiem i PO nicku
         Matcher m = PLAYER_PLACEHOLDER.matcher(withPlaceholders);
         if (!m.find()) {
             // Fallback
-            return withAfkTag(sender, LegacyComponentSerializer.legacyAmpersand()
+            return withAfkTag(sender, LEGACY
                     .deserialize(withPlaceholders.replace("{player}", sender.getName())));
         }
 
@@ -312,9 +321,9 @@ public class ChannelManager {
         Component nickComponent = buildNickComponent(sender, group, format, beforePlayer, lpColor);
 
         // Złącz wszystko
-        return withAfkTag(sender, LegacyComponentSerializer.legacyAmpersand().deserialize(beforePlayer)
+        return withAfkTag(sender, LEGACY.deserialize(beforePlayer)
                 .append(nickComponent)
-                .append(LegacyComponentSerializer.legacyAmpersand().deserialize(afterPlayer)));
+                .append(LEGACY.deserialize(afterPlayer)));
     }
 
     /**
@@ -329,7 +338,7 @@ public class ChannelManager {
             return base;
         }
         String tag = plugin.getConfig().getString("afk.chat-prefix", "&7☾ AFK ");
-        return LegacyComponentSerializer.legacyAmpersand().deserialize(tag).append(base);
+        return LEGACY.deserialize(tag).append(base);
     }
 
     /**
@@ -358,7 +367,7 @@ public class ChannelManager {
             nickColorCode = extractColorBeforePlayer(format);
         }
 
-        Component nickText = LegacyComponentSerializer.legacyAmpersand()
+        Component nickText = LEGACY
                 .deserialize(nickColorCode + sender.getName());
 
         // Zbuduj hover
@@ -370,16 +379,16 @@ public class ChannelManager {
         String separator   = plugin.getConfig().getString(
                 "chat.hover-click.separator", "&8──────────────");
 
-        Component hoverComponent = LegacyComponentSerializer.legacyAmpersand()
+        Component hoverComponent = LEGACY
                 .deserialize(separator)
                 .append(Component.newline())
-                .append(LegacyComponentSerializer.legacyAmpersand()
+                .append(LEGACY
                         .deserialize(hoverLine1.replace("{rank}", rankDisplay)))
                 .append(Component.newline())
-                .append(LegacyComponentSerializer.legacyAmpersand()
+                .append(LEGACY
                         .deserialize(hoverLine2))
                 .append(Component.newline())
-                .append(LegacyComponentSerializer.legacyAmpersand()
+                .append(LEGACY
                         .deserialize(separator));
 
         // Click: /msg <nick> (suggest — gracz musi dopisać treść)
