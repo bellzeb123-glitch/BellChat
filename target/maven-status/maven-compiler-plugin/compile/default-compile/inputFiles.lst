@@ -3,6 +3,7 @@ F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\BellChat.java
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\channel\Channel.java
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\channel\ChannelManager.java
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\channel\ChannelType.java
+F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\commands\AfkCommand.java
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\commands\BellChatCommand.java
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\commands\ChannelCommand.java
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\commands\ChatLockCommand.java
@@ -17,9 +18,11 @@ F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\event\BellChatChannelSwitchE
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\event\BellChatMentionEvent.java
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\event\BellChatMessageEvent.java
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\gui\AdminGUI.java
+F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\listeners\AfkListener.java
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\listeners\ChatListener.java
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\listeners\TablistListener.java
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\listeners\VIPJoinListener.java
+F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\managers\AfkManager.java
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\managers\AntispamManager.java
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\managers\BroadcastManager.java
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\managers\ChatStateManager.java

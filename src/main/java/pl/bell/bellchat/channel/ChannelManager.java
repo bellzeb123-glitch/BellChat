@@ -294,15 +294,15 @@ public class ChannelManager {
             String full = withPlaceholders
                     .replace("{player}",      sender.getName())
                     .replace("{displayname}", sender.getName());
-            return LegacyComponentSerializer.legacyAmpersand().deserialize(full);
+            return withAfkTag(sender, LegacyComponentSerializer.legacyAmpersand().deserialize(full));
         }
 
         // Podziel format na część PRZED nickiem i PO nicku
         Matcher m = PLAYER_PLACEHOLDER.matcher(withPlaceholders);
         if (!m.find()) {
             // Fallback
-            return LegacyComponentSerializer.legacyAmpersand()
-                    .deserialize(withPlaceholders.replace("{player}", sender.getName()));
+            return withAfkTag(sender, LegacyComponentSerializer.legacyAmpersand()
+                    .deserialize(withPlaceholders.replace("{player}", sender.getName())));
         }
 
         String beforePlayer = withPlaceholders.substring(0, m.start());
@@ -312,9 +312,24 @@ public class ChannelManager {
         Component nickComponent = buildNickComponent(sender, group, format, beforePlayer, lpColor);
 
         // Złącz wszystko
-        return LegacyComponentSerializer.legacyAmpersand().deserialize(beforePlayer)
+        return withAfkTag(sender, LegacyComponentSerializer.legacyAmpersand().deserialize(beforePlayer)
                 .append(nickComponent)
-                .append(LegacyComponentSerializer.legacyAmpersand().deserialize(afterPlayer));
+                .append(LegacyComponentSerializer.legacyAmpersand().deserialize(afterPlayer)));
+    }
+
+    /**
+     * Dokleja znacznik [AFK] na początku wiadomości (przed nickiem),
+     * jeśli nadawca jest oznaczony jako AFK.
+     * Kolor z config (afk.chat-prefix) — domyślnie szary, by nie kolidować
+     * z kolorami rang (żółty/niebieski/fioletowy).
+     */
+    private Component withAfkTag(Player sender, Component base) {
+        if (plugin.getAfkManager() == null
+                || !plugin.getAfkManager().isAfk(sender.getUniqueId())) {
+            return base;
+        }
+        String tag = plugin.getConfig().getString("afk.chat-prefix", "&7☾ AFK ");
+        return LegacyComponentSerializer.legacyAmpersand().deserialize(tag).append(base);
     }
 
     /**

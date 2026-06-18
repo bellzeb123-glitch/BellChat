@@ -1,5 +1,5 @@
 name: BellChat
-version: '1.26.1.3'
+version: '1.26.1.6'
 main: pl.bell.bellchat.BellChat
 api-version: '1.21'
 author: bellzeb123-glitch
@@ -46,6 +46,9 @@ commands:
     description: Toggle private message spy
     aliases: [spy]
     usage: /msgspy
+  afk:
+    description: Toggle your AFK status
+    usage: /afk
 
 permissions:
   bellchat.admin:
@@ -95,4 +98,7 @@ permissions:
     default: false
   bellchat.channel.admin:
     description: Access to Admin channel
+    default: op
+  bellchat.afk.kick.bypass:
+    description: Not affected by AFK auto-kick
     default: op

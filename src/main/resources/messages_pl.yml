@@ -65,6 +65,14 @@ channel-party-not-member: "&cNie jesteś członkiem tej grupy."
 channel-party-disbanded: "&cGrupa została rozwiązana."
 channel-overview-header: "&6Aktywne kanały:"
 
+# ── AFK ──────────────────────────────────────────────────────
+# {player} = nick gracza. Komunikaty globalne (bez prefiksu pluginu).
+afk-now: "&e* &7{player} &7jest teraz &eAFK&7."
+afk-now-auto: "&e* &7{player} &7jest teraz &eAFK &8(bezczynność)&7."
+afk-back: "&a* &7{player} &7wrócił z &eAFK&7."
+afk-kick-reason: "&cZostałeś wyrzucony za zbyt długie AFK."
+afk-disabled: "&cSystem AFK jest wyłączony."
+
 # ── Pomoc — komendy graczy ───────────────────────────────────
 help-header: "&6=== BellChat v{version} ==="
 help-msg: "&7/msg &f<gracz> <wiadomość> &8— &7Wyślij prywatną wiadomość"

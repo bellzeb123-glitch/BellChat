@@ -11,6 +11,7 @@ pl\bell\bellchat\managers\AntispamManager$SpamResult.class
 pl\bell\bellchat\managers\UrlFilterManager.class
 pl\bell\bellchat\commands\ClearChatCommand.class
 pl\bell\bellchat\commands\IgnoreCommand.class
+pl\bell\bellchat\managers\AfkManager.class
 pl\bell\bellchat\model\MuteEntry.class
 pl\bell\bellchat\listeners\ChatListener.class
 pl\bell\bellchat\managers\MessageManager.class
@@ -21,8 +22,10 @@ pl\bell\bellchat\listeners\TablistListener$1.class
 pl\bell\bellchat\event\BellChatChannelSwitchEvent.class
 pl\bell\bellchat\commands\BellChatCommand.class
 pl\bell\bellchat\gui\AdminGUI.class
+pl\bell\bellchat\commands\AfkCommand.class
 pl\bell\bellchat\managers\AntispamManager.class
 pl\bell\bellchat\api\BellChatAPI.class
+pl\bell\bellchat\listeners\AfkListener.class
 pl\bell\bellchat\managers\ChatStateManager.class
 pl\bell\bellchat\BellChat.class
 pl\bell\bellchat\commands\ChatLockCommand.class

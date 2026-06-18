@@ -77,6 +77,15 @@ public class TablistListener implements Listener {
                 .replace("{player}", player.getName())
                 .replace("&", "§");
 
+        // Dopisek [AFK] gdy gracz jest AFK
+        if (plugin.getAfkManager() != null
+                && plugin.getAfkManager().isAfk(player.getUniqueId())) {
+            String afkSuffix = plugin.getConfig()
+                    .getString("afk.tablist-suffix", " &7☾ AFK")
+                    .replace("&", "§");
+            listName = listName + afkSuffix;
+        }
+
         Component component = LegacyComponentSerializer.legacySection().deserialize(listName);
         player.playerListName(component);
     }

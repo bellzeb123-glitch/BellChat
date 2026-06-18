@@ -5,6 +5,7 @@ import pl.bell.bellchat.api.BellChatAPI;
 import pl.bell.bellchat.channel.ChannelManager;
 import pl.bell.bellchat.commands.*;
 import pl.bell.bellchat.gui.AdminGUI;
+import pl.bell.bellchat.listeners.AfkListener;
 import pl.bell.bellchat.listeners.ChatListener;
 import pl.bell.bellchat.listeners.TablistListener;
 import pl.bell.bellchat.listeners.VIPJoinListener;
@@ -34,6 +35,7 @@ public class BellChat extends JavaPlugin {
     private UrlFilterManager  urlFilterManager;
     private BroadcastManager  broadcastManager;
     private TablistListener   tablistListener;
+    private AfkManager        afkManager;
 
     @Override
     public void onEnable() {
@@ -58,11 +60,13 @@ public class BellChat extends JavaPlugin {
         this.urlFilterManager = new UrlFilterManager(this);
         this.broadcastManager = new BroadcastManager(this);
         this.tablistListener  = new TablistListener(this);
+        this.afkManager       = new AfkManager(this);
 
         // Listeners
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
         getServer().getPluginManager().registerEvents(new VIPJoinListener(this), this);
         getServer().getPluginManager().registerEvents(tablistListener, this);
+        getServer().getPluginManager().registerEvents(new AfkListener(this), this);
 
         // Commands
         reg("bellchat",  new BellChatCommand(this));
@@ -75,6 +79,7 @@ public class BellChat extends JavaPlugin {
         reg("clearchat", new ClearChatCommand(this));
         reg("chatlock",  new ChatLockCommand(this));
         reg("msgspy",    new MsgSpyCommand(this));
+        reg("afk",       new AfkCommand(this));
 
         getLogger().info("BellChat v" + getDescription().getVersion() + " enabled! "
                 + "Channels: " + channelManager.getChannels().keySet());
@@ -84,6 +89,7 @@ public class BellChat extends JavaPlugin {
     public void onDisable() {
         BellChatAPI.shutdown();
         if (broadcastManager != null) broadcastManager.shutdown();
+        if (afkManager       != null) afkManager.shutdown();
         if (muteManager      != null) muteManager.saveAll();
         if (ignoreManager    != null) ignoreManager.saveAll();
         getLogger().info("BellChat disabled. Data saved.");
@@ -101,6 +107,7 @@ public class BellChat extends JavaPlugin {
         if (urlFilterManager != null) urlFilterManager.reload();
         if (broadcastManager != null) broadcastManager.reload();
         if (antispamManager  != null) antispamManager.reload();
+        if (afkManager       != null) afkManager.reload();
         if (tablistListener  != null) tablistListener.refreshAll();
         getLogger().info("BellChat reloaded.");
     }
@@ -142,4 +149,5 @@ public class BellChat extends JavaPlugin {
     public UrlFilterManager getUrlFilterManager()    { return urlFilterManager; }
     public BroadcastManager getBroadcastManager()    { return broadcastManager; }
     public TablistListener getTablistListener()      { return tablistListener; }
+    public AfkManager getAfkManager()                { return afkManager; }
 }
