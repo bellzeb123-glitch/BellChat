@@ -1,5 +1,5 @@
 name: BellChat
-version: '1.26.1.7'
+version: '1.26.1.2'
 main: pl.bell.bellchat.BellChat
 api-version: '1.21'
 author: bellzeb123-glitch
