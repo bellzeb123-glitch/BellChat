@@ -221,17 +221,24 @@ public final class AfkAdminGUI implements Listener {
         return awaitingInput.containsKey(player.getUniqueId());
     }
 
+    public void cancelPendingInput(Player player) {
+        awaitingInput.remove(player.getUniqueId());
+    }
+
     @EventHandler
     public void onClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player admin)) return;
         if (!(event.getInventory().getHolder() instanceof AfkGuiHolder holder)) return;
+
+        int topSize = event.getView().getTopInventory().getSize();
+        if (event.getRawSlot() < 0 || event.getRawSlot() >= topSize) return;
+        if (event.getClickedInventory() != event.getView().getTopInventory()) return;
 
         event.setCancelled(true);
         if (event.getCurrentItem() == null
                 || event.getCurrentItem().getType() == Material.GRAY_STAINED_GLASS_PANE) return;
 
         int slot = event.getRawSlot();
-        if (slot < 0 || slot >= event.getInventory().getSize()) return;
 
         if (holder.getView() == View.GROUP_LIST) {
             handleGroupList(admin, holder, slot, event.getClick());

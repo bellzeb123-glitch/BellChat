@@ -1,6 +1,10 @@
 pl\bell\bellchat\gui\AfkAdminGUI$View.class
+pl\bell\bellchat\gui\BroadcastAdminGUI$BroadcastGuiHolder.class
 pl\bell\bellchat\commands\MsgSpyCommand.class
+pl\bell\bellchat\gui\ChannelAdminGUI$PendingInput.class
 pl\bell\bellchat\managers\UrlFilterManager.class
+pl\bell\bellchat\gui\BroadcastAdminGUI$InputType.class
+pl\bell\bellchat\gui\ChannelAdminGUI.class
 pl\bell\bellchat\listeners\AfkGuiInputListener.class
 pl\bell\bellchat\gui\AfkAdminGUI$AfkGuiHolder.class
 pl\bell\bellchat\commands\IgnoreCommand.class
@@ -18,8 +22,12 @@ pl\bell\bellchat\integration\BellLPIntegration$ChatHandler.class
 pl\bell\bellchat\listeners\AfkListener.class
 pl\bell\bellchat\integration\BellLPIntegration.class
 pl\bell\bellchat\BellChat.class
+pl\bell\bellchat\gui\BroadcastAdminGUI$PendingInput.class
+pl\bell\bellchat\gui\ChannelAdminGUI$ChannelGuiHolder.class
 pl\bell\bellchat\commands\ChatLockCommand.class
+pl\bell\bellchat\gui\BroadcastAdminGUI$View.class
 pl\bell\bellchat\event\BellChatMentionEvent.class
+pl\bell\bellchat\gui\ChannelAdminGUI$InputType.class
 pl\bell\bellchat\commands\ReplyCommand.class
 pl\bell\bellchat\commands\MuteCommand.class
 pl\bell\bellchat\channel\ChannelType.class
@@ -36,6 +44,8 @@ pl\bell\bellchat\gui\AfkAdminGUI$TimeField.class
 pl\bell\bellchat\event\BellChatMessageEvent.class
 pl\bell\bellchat\listeners\VIPJoinListener.class
 pl\bell\bellchat\managers\IgnoreManager.class
+pl\bell\bellchat\gui\ChannelAdminGUI$1.class
+pl\bell\bellchat\gui\ChannelAdminGUI$View.class
 pl\bell\bellchat\managers\AfkConfigManager$CachedRule.class
 pl\bell\bellchat\channel\Channel.class
 pl\bell\bellchat\managers\AntispamManager$SpamResult.class
@@ -45,8 +55,10 @@ pl\bell\bellchat\listeners\ChatListener.class
 pl\bell\bellchat\managers\MessageManager.class
 pl\bell\bellchat\managers\MsgSpyManager.class
 pl\bell\bellchat\event\BellChatChannelSwitchEvent.class
+pl\bell\bellchat\listeners\AdminChatInputListener.class
 pl\bell\bellchat\gui\AdminGUI.class
 pl\bell\bellchat\commands\AfkCommand.class
 pl\bell\bellchat\managers\ChatStateManager.class
 pl\bell\bellchat\listeners\TablistListener.class
 pl\bell\bellchat\managers\BroadcastManager.class
+pl\bell\bellchat\gui\BroadcastAdminGUI.class

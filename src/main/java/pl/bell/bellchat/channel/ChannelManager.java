@@ -235,9 +235,14 @@ public class ChannelManager {
                                 && p.getLocation().distanceSquared(loc) <= (long) radius * radius)
                         .toList();
             }
-            case VIP -> Bukkit.getOnlinePlayers().stream()
-                    .filter(p -> p.hasPermission("bellchat.channel.vip"))
-                    .toList();
+            case VIP -> {
+                String perm = channel.getRequiredPermission();
+                if (perm == null || perm.isBlank()) perm = "bellchat.channel.vip";
+                String required = perm;
+                yield Bukkit.getOnlinePlayers().stream()
+                        .filter(p -> p.hasPermission(required))
+                        .toList();
+            }
             case PARTY -> Bukkit.getOnlinePlayers().stream()
                     .filter(p -> channel.hasMember(p.getUniqueId()))
                     .toList();
@@ -503,4 +508,95 @@ public class ChannelManager {
 
     public Map<String, Channel> getChannels()      { return Collections.unmodifiableMap(channels); }
     public Optional<Channel> getChannel(String id) { return Optional.ofNullable(channels.get(id.toLowerCase())); }
+
+    public List<Channel> getChannelsList() {
+        return new ArrayList<>(channels.values());
+    }
+
+    public int channelIndex(String id) {
+        int i = 0;
+        for (String key : channels.keySet()) {
+            if (key.equalsIgnoreCase(id)) return i;
+            i++;
+        }
+        return -1;
+    }
+
+    public boolean isValidChannelId(String id) {
+        return id != null && id.matches("[a-z][a-z0-9_]{1,24}");
+    }
+
+    public boolean createChannel(String id, ChannelType type, String displayName,
+                                 String format, int localRadius, String requiredPermission) {
+        id = id.toLowerCase(Locale.ROOT);
+        if (!isValidChannelId(id) || channels.containsKey(id)) return false;
+
+        Channel ch = new Channel(id, type, displayName, format, localRadius, requiredPermission, true);
+        channels.put(id, ch);
+        saveChannelToConfig(ch);
+        log.info("[ChannelManager] Created channel: " + id);
+        return true;
+    }
+
+    public void updateChannel(String id, String displayName, String format,
+                              int localRadius, String requiredPermission) {
+        Channel old = channels.get(id.toLowerCase(Locale.ROOT));
+        if (old == null) return;
+
+        String perm = requiredPermission;
+        if (perm != null && perm.isBlank()) perm = null;
+
+        Channel updated = new Channel(old.getId(), old.getType(), displayName, format,
+                localRadius, perm, old.isEnabled());
+        channels.put(old.getId(), updated);
+        saveChannelToConfig(updated);
+    }
+
+    public boolean deleteChannel(String id) {
+        id = id.toLowerCase(Locale.ROOT);
+        if (!channels.containsKey(id) || isDefaultChannel(id)) return false;
+
+        channels.remove(id);
+        plugin.getConfig().set("channels." + id, null);
+        plugin.saveConfig();
+
+        for (Map.Entry<UUID, String> e : playerChannels.entrySet()) {
+            if (!e.getValue().equals(id)) continue;
+            e.setValue(DEFAULT_CHANNEL);
+            Player p = Bukkit.getPlayer(e.getKey());
+            if (p != null) {
+                plugin.getMessageManager().send(p, "channel-disabled-moved",
+                        Map.of("channel", id));
+            }
+        }
+        return true;
+    }
+
+    private void saveChannelToConfig(Channel ch) {
+        String base = "channels." + ch.getId() + ".";
+        plugin.getConfig().set(base + "type", ch.getType().name());
+        plugin.getConfig().set(base + "display-name", ch.getDisplayName());
+        plugin.getConfig().set(base + "format", ch.getFormat());
+        plugin.getConfig().set(base + "enabled", ch.isEnabled());
+        if (ch.getType() == ChannelType.LOCAL) {
+            plugin.getConfig().set(base + "local-radius", ch.getLocalRadius());
+        } else {
+            plugin.getConfig().set(base + "local-radius", null);
+        }
+        if (ch.requiresPermission()) {
+            plugin.getConfig().set(base + "required-permission", ch.getRequiredPermission());
+        } else {
+            plugin.getConfig().set(base + "required-permission", null);
+        }
+        plugin.saveConfig();
+    }
+
+    /** Default permission node for a channel type (used when creating new channels). */
+    public String defaultPermissionForType(ChannelType type) {
+        return switch (type) {
+            case VIP -> "bellchat.channel.vip";
+            case ADMIN -> "bellchat.channel.admin";
+            default -> null;
+        };
+    }
 }

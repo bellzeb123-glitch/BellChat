@@ -114,4 +114,92 @@ public class BroadcastManager {
     public void shutdown() {
         cancelAll();
     }
+
+    // ── Admin GUI helpers ────────────────────────────────────────
+
+    public List<String> getSlotKeys() {
+        ConfigurationSection slots = plugin.getConfig().getConfigurationSection("broadcasts.slots");
+        if (slots == null) return List.of();
+        return new ArrayList<>(slots.getKeys(false));
+    }
+
+    public boolean hasSlot(String key) {
+        return plugin.getConfig().contains("broadcasts.slots." + key);
+    }
+
+    public boolean isSlotEnabled(String key) {
+        return plugin.getConfig().getBoolean("broadcasts.slots." + key + ".enabled", true);
+    }
+
+    public void setSlotEnabled(String key, boolean enabled) {
+        plugin.getConfig().set("broadcasts.slots." + key + ".enabled", enabled);
+        plugin.saveConfig();
+        reload();
+    }
+
+    public int getIntervalSeconds(String key) {
+        return plugin.getConfig().getInt("broadcasts.slots." + key + ".interval-seconds", 300);
+    }
+
+    public void setIntervalSeconds(String key, int seconds) {
+        plugin.getConfig().set("broadcasts.slots." + key + ".interval-seconds", Math.max(30, seconds));
+        plugin.saveConfig();
+        reload();
+    }
+
+    public boolean isRandom(String key) {
+        return plugin.getConfig().getBoolean("broadcasts.slots." + key + ".random", false);
+    }
+
+    public void setRandom(String key, boolean random) {
+        plugin.getConfig().set("broadcasts.slots." + key + ".random", random);
+        plugin.saveConfig();
+        reload();
+    }
+
+    public List<String> getMessages(String key) {
+        return new ArrayList<>(plugin.getConfig().getStringList("broadcasts.slots." + key + ".messages"));
+    }
+
+    public void addMessage(String key, String message) {
+        List<String> messages = getMessages(key);
+        messages.add(message);
+        plugin.getConfig().set("broadcasts.slots." + key + ".messages", messages);
+        plugin.saveConfig();
+        reload();
+    }
+
+    public void removeMessage(String key, int index) {
+        List<String> messages = getMessages(key);
+        if (index < 0 || index >= messages.size()) return;
+        messages.remove(index);
+        plugin.getConfig().set("broadcasts.slots." + key + ".messages", messages);
+        plugin.saveConfig();
+        reload();
+    }
+
+    public void createSlot(String key) {
+        String path = "broadcasts.slots." + key;
+        plugin.getConfig().set(path + ".enabled", true);
+        plugin.getConfig().set(path + ".interval-seconds", 300);
+        plugin.getConfig().set(path + ".random", false);
+        plugin.getConfig().set(path + ".messages", List.of(
+                "&8[&6Bell&8] &fEdit this message in /bch gui → Broadcasts"));
+        plugin.saveConfig();
+        reload();
+    }
+
+    public void deleteSlot(String key) {
+        plugin.getConfig().set("broadcasts.slots." + key, null);
+        plugin.saveConfig();
+        reload();
+    }
+
+    /** Sends one message from the slot immediately (for admin preview). */
+    public void sendTest(String key) {
+        List<String> messages = getMessages(key);
+        if (messages.isEmpty()) return;
+        String raw = messages.get(0);
+        Bukkit.broadcastMessage(raw.replace("&", "§"));
+    }
 }

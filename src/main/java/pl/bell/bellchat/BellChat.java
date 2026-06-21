@@ -6,7 +6,9 @@ import pl.bell.bellchat.channel.ChannelManager;
 import pl.bell.bellchat.commands.*;
 import pl.bell.bellchat.gui.AdminGUI;
 import pl.bell.bellchat.gui.AfkAdminGUI;
-import pl.bell.bellchat.listeners.AfkGuiInputListener;
+import pl.bell.bellchat.gui.BroadcastAdminGUI;
+import pl.bell.bellchat.gui.ChannelAdminGUI;
+import pl.bell.bellchat.listeners.AdminChatInputListener;
 import pl.bell.bellchat.listeners.AfkListener;
 import pl.bell.bellchat.listeners.ChatListener;
 import pl.bell.bellchat.listeners.TablistListener;
@@ -40,6 +42,8 @@ public class BellChat extends JavaPlugin {
     private AfkManager        afkManager;
     private AfkConfigManager  afkConfigManager;
     private AfkAdminGUI       afkAdminGUI;
+    private BroadcastAdminGUI broadcastAdminGUI;
+    private ChannelAdminGUI   channelAdminGUI;
     private ChatListener      chatListener;
 
     @Override
@@ -58,6 +62,8 @@ public class BellChat extends JavaPlugin {
         this.adminGUI         = new AdminGUI(this);
         this.afkConfigManager = new AfkConfigManager(this);
         this.afkAdminGUI      = new AfkAdminGUI(this);
+        this.broadcastAdminGUI = new BroadcastAdminGUI(this);
+        this.channelAdminGUI  = new ChannelAdminGUI(this);
 
         this.channelManager   = new ChannelManager(this);
         this.channelManager.load();
@@ -79,7 +85,7 @@ public class BellChat extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new VIPJoinListener(this), this);
         getServer().getPluginManager().registerEvents(tablistListener, this);
         getServer().getPluginManager().registerEvents(new AfkListener(this), this);
-        getServer().getPluginManager().registerEvents(new AfkGuiInputListener(this), this);
+        getServer().getPluginManager().registerEvents(new AdminChatInputListener(this), this);
 
         // Commands
         reg("bellchat",  new BellChatCommand(this));
@@ -168,4 +174,6 @@ public class BellChat extends JavaPlugin {
     public AfkManager getAfkManager()                { return afkManager; }
     public AfkConfigManager getAfkConfigManager()   { return afkConfigManager; }
     public AfkAdminGUI getAfkAdminGUI()             { return afkAdminGUI; }
+    public BroadcastAdminGUI getBroadcastAdminGUI() { return broadcastAdminGUI; }
+    public ChannelAdminGUI getChannelAdminGUI()     { return channelAdminGUI; }
 }

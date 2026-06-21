@@ -19,7 +19,10 @@ F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\event\BellChatMentionEvent.j
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\event\BellChatMessageEvent.java
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\gui\AdminGUI.java
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\gui\AfkAdminGUI.java
+F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\gui\BroadcastAdminGUI.java
+F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\gui\ChannelAdminGUI.java
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\integration\BellLPIntegration.java
+F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\listeners\AdminChatInputListener.java
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\listeners\AfkGuiInputListener.java
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\listeners\AfkListener.java
 F:\Projekty\BellChat\src\main\java\pl\bell\bellchat\listeners\ChatListener.java

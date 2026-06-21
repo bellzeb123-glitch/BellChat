@@ -6,6 +6,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -74,7 +75,7 @@ public class AdminGUI implements Listener {
                 t("gui-desc-emoji-1"), t("gui-desc-emoji-2"), t("gui-desc-emoji-3")));
         inv.setItem(11, toggle(Material.CLOCK,    t("gui-toggle-broadcasts"),
                 getBool("broadcasts.enabled", false),
-                t("gui-desc-broadcasts-1"), t("gui-desc-broadcasts-2")));
+                t("gui-desc-broadcasts-1"), t("gui-desc-broadcasts-2"), t("gui-desc-broadcasts-3")));
         inv.setItem(12, toggle(Material.NAME_TAG, t("gui-toggle-hover-click"),
                 getBool("chat.hover-click.enabled", true),
                 t("gui-desc-hover-1"), t("gui-desc-hover-2")));
@@ -84,6 +85,27 @@ public class AdminGUI implements Listener {
         inv.setItem(14, item(Material.CLOCK, color(t("gui-btn-afk")),
                 List.of(color("&7" + t("gui-btn-afk-desc-1")),
                         color("&7" + t("gui-btn-afk-desc-2")))));
+
+        String currentLang = plugin.getConfig().getString("language", "en").toLowerCase();
+        inv.setItem(15, languageToggle(currentLang));
+
+        if (Bukkit.getPluginManager().getPlugin("BellChatPro") != null) {
+            inv.setItem(8, item(Material.NETHER_STAR, color(t("gui-btn-pro-admin")),
+                    List.of(
+                            color("&7" + t("gui-btn-pro-admin-desc-1")),
+                            color("&7" + t("gui-btn-pro-admin-desc-2")),
+                            color(t("gui-separator")),
+                            color(t("gui-click-open"))
+                    )));
+        }
+
+        inv.setItem(47, item(Material.WRITABLE_BOOK, color(t("gui-btn-broadcast-setup")),
+                List.of(
+                        color("&7" + t("gui-btn-broadcast-setup-desc-1")),
+                        color("&7" + t("gui-btn-broadcast-setup-desc-2")),
+                        color(t("gui-separator")),
+                        color(t("gui-click-open"))
+                )));
 
         // Filler
         ItemStack filler = item(Material.GRAY_STAINED_GLASS_PANE, " ", List.of());
@@ -219,20 +241,22 @@ public class AdminGUI implements Listener {
         String title = event.getView().getTitle();
 
         boolean isOurs = title.equals(titleSettings())
-                || title.equals(titleChannels())
                 || title.equals(titleMuted());
         if (!isOurs) return;
+
+        int topSize = event.getView().getTopInventory().getSize();
+        if (event.getRawSlot() < 0 || event.getRawSlot() >= topSize) return;
+        if (event.getClickedInventory() != event.getView().getTopInventory()) return;
 
         event.setCancelled(true);
         if (event.getCurrentItem() == null
                 || event.getCurrentItem().getType() == Material.GRAY_STAINED_GLASS_PANE) return;
 
-        if (title.equals(titleSettings())) handleSettings(admin, event.getSlot());
-        else if (title.equals(titleChannels())) handleChannels(admin, event.getSlot());
+        if (title.equals(titleSettings())) handleSettings(admin, event.getRawSlot(), event.getClick());
         else if (title.equals(titleMuted())) handleMuted(admin, event);
     }
 
-    private void handleSettings(Player admin, int slot) {
+    private void handleSettings(Player admin, int slot, ClickType click) {
         switch (slot) {
             case 0  -> doToggle(admin, "antispam.enabled",         t("gui-toggle-antispam"));
             case 1  -> doToggle(admin, "profanity-filter.enabled", t("gui-toggle-profanity"));
@@ -245,18 +269,35 @@ public class AdminGUI implements Listener {
                         Map.of("player", admin.getName()));
                 Bukkit.getScheduler().runTask(plugin, () -> openSettings(admin));
             }
+            case 8 -> {
+                if (Bukkit.getPluginManager().getPlugin("BellChatPro") == null) break;
+                if (!admin.hasPermission("bellchat.pro.admin")) {
+                    plugin.getMessageManager().send(admin, "no-permission");
+                    break;
+                }
+                admin.closeInventory();
+                admin.performCommand("bcp gui");
+            }
             case 9  -> doToggle(admin, "url-filter.enabled",       t("gui-toggle-url-filter"));
             case 10 -> {
                 plugin.getEmojiManager().setEnabled(!plugin.getEmojiManager().isEnabled());
                 sendToggleMsg(admin, t("gui-toggle-emoji"), plugin.getEmojiManager().isEnabled());
                 Bukkit.getScheduler().runTask(plugin, () -> openSettings(admin));
             }
-            case 11 -> doToggle(admin, "broadcasts.enabled",       t("gui-toggle-broadcasts"));
+            case 11 -> {
+                if (click.isRightClick()) {
+                    Bukkit.getScheduler().runTask(plugin, () -> plugin.getBroadcastAdminGUI().openSlotList(admin));
+                } else {
+                    doToggle(admin, "broadcasts.enabled", t("gui-toggle-broadcasts"));
+                }
+            }
             case 12 -> doToggle(admin, "chat.hover-click.enabled", t("gui-toggle-hover-click"));
             case 13 -> doToggle(admin, "antispam.block-duplicate", t("gui-toggle-duplicate"));
             case 14 -> Bukkit.getScheduler().runTask(plugin, () -> plugin.getAfkAdminGUI().openGroupList(admin));
-            case 45 -> Bukkit.getScheduler().runTask(plugin, () -> openChannels(admin));
+            case 15 -> toggleLanguage(admin);
+            case 45 -> Bukkit.getScheduler().runTask(plugin, () -> plugin.getChannelAdminGUI().openChannelList(admin));
             case 46 -> Bukkit.getScheduler().runTask(plugin, () -> openMuted(admin, 0));
+            case 47 -> Bukkit.getScheduler().runTask(plugin, () -> plugin.getBroadcastAdminGUI().openSlotList(admin));
             case 53 -> {
                 plugin.reload();
                 plugin.getMessageManager().send(admin, "reload-done");
@@ -300,7 +341,7 @@ public class AdminGUI implements Listener {
     }
 
     private void handleMuted(Player admin, InventoryClickEvent event) {
-        int slot = event.getSlot();
+        int slot = event.getRawSlot();
 
         if (slot == 45) {
             Bukkit.getScheduler().runTask(plugin, () -> openSettings(admin));
@@ -360,6 +401,24 @@ public class AdminGUI implements Listener {
         String msgKey = enabled ? "gui-toggle-enabled" : "gui-toggle-disabled";
         String msg = t(msgKey).replace("{feature}", feature);
         admin.sendMessage(plugin.getMessageManager().getPrefix() + color(msg));
+    }
+
+    private void toggleLanguage(Player admin) {
+        String current = plugin.getConfig().getString("language", "en").toLowerCase();
+        String next = current.equals("pl") ? "en" : "pl";
+        plugin.getConfig().set("language", next);
+        plugin.saveConfig();
+        plugin.reload();
+        plugin.getMessageManager().send(admin, "language-changed", Map.of("lang", next.toUpperCase()));
+        Bukkit.getScheduler().runTask(plugin, () -> openSettings(admin));
+    }
+
+    private ItemStack languageToggle(String currentLang) {
+        return item(Material.WRITABLE_BOOK, color(t("gui-lang-toggle")),
+                List.of(
+                        color("&7" + currentLang.toUpperCase()),
+                        color(t("gui-lang-click"))
+                ));
     }
 
     private void reloadRelevant(String key) {
