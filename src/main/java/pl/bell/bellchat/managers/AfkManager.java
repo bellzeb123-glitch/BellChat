@@ -19,8 +19,8 @@ import java.util.concurrent.ConcurrentHashMap;
  *  - Auto-AFK po X sekundach bezczynności (config: afk.auto-afk-seconds).
  *  - Komunikaty globalne wejścia/wyjścia z AFK (messages: afk-now / afk-back).
  *  - Znacznik [AFK] w TAB (TablistListener).
- *  - Auto-kick po dłuższym AFK (config: afk.auto-kick.*), z wyłączeniem
- *    dla wybranych grup LuckPerms (exempt-groups) lub permission bypass.
+ *  - Auto-kick po dłuższym AFK (reguły per grupa LuckPerms w afk.groups),
+ *    z wyłączeniem dla permission bellchat.afk.kick.bypass.
  *
  * Wątki:
  *  - markActivity() jest wołane też z wątku asynchronicznego (czat),
@@ -55,7 +55,7 @@ public class AfkManager {
     }
 
     private void startTask() {
-        if (!plugin.getConfig().getBoolean("afk.enabled", true)) return;
+        if (!plugin.getAfkConfigManager().isGlobalEnabled()) return;
         // co 1 sekundę (20 ticków) — sprawdza bezczynność i auto-kick
         checkTask = Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 20L, 20L);
     }
@@ -143,44 +143,30 @@ public class AfkManager {
     // ── Tick: auto-afk + auto-kick ──────────────────────────────
 
     private void tick() {
-        if (!plugin.getConfig().getBoolean("afk.enabled", true)) return;
+        if (!plugin.getAfkConfigManager().isGlobalEnabled()) return;
 
-        long now      = System.currentTimeMillis();
-        long afkAfter  = plugin.getConfig().getInt("afk.auto-afk-seconds", 180) * 1000L;
-        boolean kickOn = plugin.getConfig().getBoolean("afk.auto-kick.enabled", false);
-        long kickAfter = plugin.getConfig().getInt("afk.auto-kick.seconds", 900) * 1000L;
+        long now = System.currentTimeMillis();
 
         for (Player p : Bukkit.getOnlinePlayers()) {
+            if (p.hasPermission("bellchat.afk.kick.bypass")) continue;
+
             UUID uuid = p.getUniqueId();
             long idle = now - lastActivity.getOrDefault(uuid, now);
 
-            // Auto-AFK
+            var rule = plugin.getAfkConfigManager().resolveRule(p);
+            long afkAfter = rule.getAutoAfkSeconds() * 1000L;
+            boolean kickOn = rule.isKickEnabled();
+            long kickAfter = rule.getKickSeconds() * 1000L;
+
             if (afkAfter > 0 && !isAfk(uuid) && idle >= afkAfter) {
                 setAfk(p, true, true);
             }
 
-            // Auto-kick (tylko gdy AFK i po przekroczeniu progu)
-            if (kickOn && kickAfter > 0 && isAfk(uuid) && idle >= kickAfter && !isKickExempt(p)) {
+            if (kickOn && kickAfter > 0 && isAfk(uuid) && idle >= kickAfter) {
                 String reason = plugin.getMessageManager().get("afk-kick-reason");
                 p.kick(LegacyComponentSerializer.legacySection().deserialize(reason));
             }
         }
-    }
-
-    /**
-     * Czy gracz jest zwolniony z auto-kicka.
-     * - permission bellchat.afk.kick.bypass, lub
-     * - jego główna grupa LP jest na liście afk.auto-kick.exempt-groups (np. VIP).
-     */
-    public boolean isKickExempt(Player p) {
-        if (p.hasPermission("bellchat.afk.kick.bypass")) return true;
-
-        var exempt = plugin.getConfig().getStringList("afk.auto-kick.exempt-groups");
-        if (exempt.isEmpty()) return false;
-
-        String group = plugin.getLuckPermsManager().getPrimaryGroup(p);
-        if (group == null) return false;
-        return exempt.stream().anyMatch(g -> g.equalsIgnoreCase(group));
     }
 
     // ── Helpers ─────────────────────────────────────────────────

@@ -1,12 +1,17 @@
 package pl.bell.bellchat.managers;
 
 import net.luckperms.api.LuckPerms;
+import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.query.QueryOptions;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import pl.bell.bellchat.BellChat;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.TreeSet;
 
 public class LuckPermsManager {
 
@@ -79,4 +84,47 @@ public class LuckPermsManager {
     }
 
     public boolean isHooked() { return luckPerms != null; }
+
+    /** Czy gracz dziedziczy grupę LP (nie tylko primary). */
+    public boolean inheritsGroup(Player player, String groupName) {
+        if (luckPerms == null || groupName == null) return false;
+        User user = luckPerms.getUserManager().getUser(player.getUniqueId());
+        if (user == null) return false;
+        return user.getInheritedGroups(QueryOptions.nonContextual()).stream()
+            .anyMatch(g -> g.getName().equalsIgnoreCase(groupName));
+    }
+
+    /** All loaded LuckPerms groups (sorted alphabetically). */
+    public List<String> getAllGroupNames() {
+        TreeSet<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        if (luckPerms != null) {
+            for (Group group : luckPerms.getGroupManager().getLoadedGroups()) {
+                names.add(group.getName());
+            }
+        }
+        if (names.isEmpty()) {
+            names.add("default");
+        }
+        return new ArrayList<>(names);
+    }
+
+    /**
+     * Inherited groups for a player, highest LP weight first.
+     * Falls back to primary group or {@code default}.
+     */
+    public List<String> getInheritedGroupsByWeight(Player player) {
+        if (luckPerms == null) {
+            return List.of("default");
+        }
+        User user = luckPerms.getUserManager().getUser(player.getUniqueId());
+        if (user == null) {
+            return List.of("default");
+        }
+        List<Group> sorted = new ArrayList<>(user.getInheritedGroups(QueryOptions.nonContextual()));
+        sorted.sort(Comparator
+                .comparingInt((Group g) -> g.getWeight().orElse(0))
+                .reversed()
+                .thenComparing(g -> g.getName(), String.CASE_INSENSITIVE_ORDER));
+        return sorted.stream().map(Group::getName).distinct().toList();
+    }
 }

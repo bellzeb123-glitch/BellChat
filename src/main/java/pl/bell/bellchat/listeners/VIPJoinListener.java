@@ -77,16 +77,25 @@ public class VIPJoinListener implements Listener {
     private boolean isNotifiableGroup(Player player) {
         var groups = plugin.getConfig()
                 .getStringList("vip-notification.notification-groups");
-        String primary = plugin.getLuckPermsManager().getPrimaryGroup(player);
-        if (primary == null) return false;
+        var lp = plugin.getLuckPermsManager();
 
-        if (groups.isEmpty()) {
-            // Backwards compat
-            String vipGroup = plugin.getConfig()
-                    .getString("vip-notification.vip-group", "vip");
-            return vipGroup.equalsIgnoreCase(primary);
+        if (!groups.isEmpty()) {
+            for (String g : groups) {
+                if (lp.inheritsGroup(player, g)) return true;
+            }
+            // BellGate VIP: kanał + grupa LP, nawet gdy primary ≠ vip
+            if (player.hasPermission("bellchat.channel.vip")
+                && groups.stream().anyMatch(g -> "vip".equalsIgnoreCase(g))) {
+                return true;
+            }
+            return false;
         }
-        return groups.stream().anyMatch(g -> g.equalsIgnoreCase(primary));
+
+        // Backwards compat
+        String vipGroup = plugin.getConfig()
+                .getString("vip-notification.vip-group", "vip");
+        if (lp.inheritsGroup(player, vipGroup)) return true;
+        return player.hasPermission("bellchat.channel.vip");
     }
 
     /**

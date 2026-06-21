@@ -81,6 +81,9 @@ public class AdminGUI implements Listener {
         inv.setItem(13, toggle(Material.COMPARATOR, t("gui-toggle-duplicate"),
                 getBool("antispam.block-duplicate", true),
                 t("gui-desc-duplicate-1"), t("gui-desc-duplicate-2")));
+        inv.setItem(14, item(Material.CLOCK, color(t("gui-btn-afk")),
+                List.of(color("&7" + t("gui-btn-afk-desc-1")),
+                        color("&7" + t("gui-btn-afk-desc-2")))));
 
         // Filler
         ItemStack filler = item(Material.GRAY_STAINED_GLASS_PANE, " ", List.of());
@@ -251,6 +254,7 @@ public class AdminGUI implements Listener {
             case 11 -> doToggle(admin, "broadcasts.enabled",       t("gui-toggle-broadcasts"));
             case 12 -> doToggle(admin, "chat.hover-click.enabled", t("gui-toggle-hover-click"));
             case 13 -> doToggle(admin, "antispam.block-duplicate", t("gui-toggle-duplicate"));
+            case 14 -> Bukkit.getScheduler().runTask(plugin, () -> plugin.getAfkAdminGUI().openGroupList(admin));
             case 45 -> Bukkit.getScheduler().runTask(plugin, () -> openChannels(admin));
             case 46 -> Bukkit.getScheduler().runTask(plugin, () -> openMuted(admin, 0));
             case 53 -> {

@@ -27,7 +27,7 @@ public class AfkCommand implements CommandExecutor, TabCompleter {
             plugin.getMessageManager().send(sender, "player-only");
             return true;
         }
-        if (!plugin.getConfig().getBoolean("afk.enabled", true)) {
+        if (!plugin.getAfkConfigManager().isGlobalEnabled()) {
             plugin.getMessageManager().send(player, "afk-disabled");
             return true;
         }

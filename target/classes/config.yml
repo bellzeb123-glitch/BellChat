@@ -131,34 +131,25 @@ channels:
     enabled: true
 
 # ── AFK ───────────────────────────────────────────────────────
-# Pełna obsługa AFK (zastępuje EssentialsX AFK).
-# Komenda /afk, auto-AFK po bezczynności, znacznik [AFK] w TAB,
-# komunikaty globalne (messages: afk-now / afk-back) oraz auto-kick.
+# Komenda /afk, auto-AFK, znacznik w TAB/czacie, auto-kick per grupa LP.
+# Zarządzanie: /bch gui → Zegar (AFK). Nowe grupy LP widoczne po /bch reload.
 afk:
   enabled: true
-
-  # Po ilu sekundach bezczynności gracz staje się automatycznie AFK.
-  # 0 = wyłącz auto-AFK (zostaje tylko ręczne /afk).
-  auto-afk-seconds: 180
-
-  # Dopisek przy nicku w TAB gdy gracz jest AFK.
   tablist-suffix: " &7☾ AFK"
-
-  # Znacznik przed nickiem na czacie gdy gracz jest AFK.
-  # Kolor szary (&7) — nie używamy żółtego/niebieskiego/fioletowego (rangi).
   chat-prefix: "&7☾ AFK "
-
-  auto-kick:
-    # Wyrzucanie graczy po zbyt długim AFK.
-    enabled: false
-    # Po ilu sekundach BYCIA AFK (liczone od ostatniej aktywności) wyrzucić.
-    seconds: 900
-    # Grupy LuckPerms zwolnione z auto-kicka (np. VIP).
-    # Kick działa dla "default", ale dla grup z tej listy jest wyłączony.
-    # Dodatkowo bypass daje permission bellchat.afk.kick.bypass.
-    exempt-groups:
-      - vip
-      - admin
+  groups:
+    default:
+      auto-afk-seconds: 180
+      kick-enabled: false
+      kick-seconds: 900
+    vip:
+      auto-afk-seconds: 300
+      kick-enabled: false
+      kick-seconds: 900
+    admin:
+      auto-afk-seconds: 0
+      kick-enabled: false
+      kick-seconds: 0
 
 # ── Tablist (lista graczy pod TAB) ────────────────────────────
 # Ustawia czysty format nicku w TAB liście.
