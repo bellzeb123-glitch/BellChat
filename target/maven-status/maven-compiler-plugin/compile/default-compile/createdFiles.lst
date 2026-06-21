@@ -14,7 +14,9 @@ pl\bell\bellchat\commands\BellChatCommand.class
 pl\bell\bellchat\managers\AntispamManager.class
 pl\bell\bellchat\model\AfkGroupRule.class
 pl\bell\bellchat\api\BellChatAPI.class
+pl\bell\bellchat\integration\BellLPIntegration$ChatHandler.class
 pl\bell\bellchat\listeners\AfkListener.class
+pl\bell\bellchat\integration\BellLPIntegration.class
 pl\bell\bellchat\BellChat.class
 pl\bell\bellchat\commands\ChatLockCommand.class
 pl\bell\bellchat\event\BellChatMentionEvent.class
@@ -34,6 +36,7 @@ pl\bell\bellchat\gui\AfkAdminGUI$TimeField.class
 pl\bell\bellchat\event\BellChatMessageEvent.class
 pl\bell\bellchat\listeners\VIPJoinListener.class
 pl\bell\bellchat\managers\IgnoreManager.class
+pl\bell\bellchat\managers\AfkConfigManager$CachedRule.class
 pl\bell\bellchat\channel\Channel.class
 pl\bell\bellchat\managers\AntispamManager$SpamResult.class
 pl\bell\bellchat\commands\ClearChatCommand.class

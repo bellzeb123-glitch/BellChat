@@ -75,7 +75,8 @@ public class AfkManager {
 
     public void remove(UUID uuid) {
         lastActivity.remove(uuid);
-        afkPlayers.remove(uuid); // ciche czyszczenie przy wyjściu — bez komunikatu "wrócił"
+        afkPlayers.remove(uuid);
+        plugin.getAfkConfigManager().invalidateCache(uuid);
     }
 
     public boolean isAfk(UUID uuid) {

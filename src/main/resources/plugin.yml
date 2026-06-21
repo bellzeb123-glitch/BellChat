@@ -8,6 +8,7 @@ description: Full-featured chat plugin with channels, emoji, URL filter and broa
 softdepend:
   - LuckPerms
   - PlaceholderAPI
+  - BellLP
 
 commands:
   bellchat:

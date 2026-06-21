@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeSet;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Per-group AFK rules stored in config and merged with LuckPerms group list.
@@ -21,8 +23,11 @@ public final class AfkConfigManager {
     private static final String PATH_GROUPS = "afk.groups";
     private static final String DEFAULT_GROUP = "default";
 
+    private record CachedRule(AfkGroupRule rule, long cachedAt) {}
+
     private final BellChat plugin;
     private final Map<String, AfkGroupRule> configured = new LinkedHashMap<>();
+    private final Map<UUID, CachedRule> ruleCache = new ConcurrentHashMap<>();
 
     public AfkConfigManager(BellChat plugin) {
         this.plugin = plugin;
@@ -32,6 +37,7 @@ public final class AfkConfigManager {
     public void reload() {
         migrateLegacyConfig();
         configured.clear();
+        ruleCache.clear();
         ConfigurationSection section = plugin.getConfig().getConfigurationSection(PATH_GROUPS);
         if (section != null) {
             for (String group : section.getKeys(false)) {
@@ -100,20 +106,42 @@ public final class AfkConfigManager {
     /**
      * Highest-weight inherited LP group with explicit config, else default rule.
      * Permission bellchat.afk.kick.bypass is handled in AfkManager.
+     * Results are cached per player for 30 seconds to avoid repeated LP lookups.
      */
     public AfkGroupRule resolveRule(Player player) {
         if (!isGlobalEnabled()) {
             return AfkGroupRule.disabled();
         }
 
+        UUID uuid = player.getUniqueId();
+        long now = System.currentTimeMillis();
+        CachedRule cached = ruleCache.get(uuid);
+        if (cached != null && now - cached.cachedAt() < 30_000) {
+            return cached.rule().copy();
+        }
+
         List<String> inherited = plugin.getLuckPermsManager().getInheritedGroupsByWeight(player);
+        AfkGroupRule resolved = null;
         for (String group : inherited) {
             AfkGroupRule rule = configured.get(normalize(group));
             if (rule != null) {
-                return rule.copy();
+                resolved = rule;
+                break;
             }
         }
-        return getDefaultRule();
+        if (resolved == null) {
+            resolved = getDefaultRule();
+        }
+        ruleCache.put(uuid, new CachedRule(resolved.copy(), now));
+        return resolved.copy();
+    }
+
+    public void invalidateCache(UUID uuid) {
+        ruleCache.remove(uuid);
+    }
+
+    public void invalidateAllCaches() {
+        ruleCache.clear();
     }
 
     public String resolveSourceGroup(Player player) {

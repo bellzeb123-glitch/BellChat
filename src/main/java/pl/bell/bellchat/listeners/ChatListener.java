@@ -15,7 +15,10 @@ import pl.bell.bellchat.BellChat;
 import pl.bell.bellchat.managers.AntispamManager;
 import pl.bell.bellchat.managers.UrlFilterManager;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -31,8 +34,27 @@ public class ChatListener implements Listener {
     private static final Pattern MENTION_PATTERN = Pattern.compile("@(\\w{2,16})");
 
     private final BellChat plugin;
+    private List<Map.Entry<Pattern, String>> profanityPatterns = List.of();
 
-    public ChatListener(BellChat plugin) { this.plugin = plugin; }
+    public ChatListener(BellChat plugin) {
+        this.plugin = plugin;
+        reloadProfanityPatterns();
+    }
+
+    public void reloadProfanityPatterns() {
+        var cfg = plugin.getConfig().getConfigurationSection("profanity-filter");
+        if (cfg == null || !cfg.getBoolean("enabled", false)) {
+            profanityPatterns = List.of();
+            return;
+        }
+        String replacement = cfg.getString("replacement", "***");
+        List<Map.Entry<Pattern, String>> compiled = new ArrayList<>();
+        for (String word : cfg.getStringList("words")) {
+            Pattern p = Pattern.compile("(?i)" + Pattern.quote(word));
+            compiled.add(Map.entry(p, replacement));
+        }
+        profanityPatterns = List.copyOf(compiled);
+    }
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
@@ -149,11 +171,9 @@ public class ChatListener implements Listener {
     // ── Profanity filter ──────────────────────────────────────
 
     private String applyProfanityFilter(String message) {
-        var cfg = plugin.getConfig().getConfigurationSection("profanity-filter");
-        if (cfg == null || !cfg.getBoolean("enabled", false)) return message;
-        String replacement = cfg.getString("replacement", "***");
-        for (String word : cfg.getStringList("words")) {
-            message = message.replaceAll("(?i)" + java.util.regex.Pattern.quote(word), replacement);
+        for (Map.Entry<Pattern, String> entry : profanityPatterns) {
+            Matcher m = entry.getKey().matcher(message);
+            message = m.replaceAll(entry.getValue());
         }
         return message;
     }

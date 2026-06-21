@@ -13,6 +13,10 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import pl.bell.bellchat.BellChat;
 
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * AfkListener — wykrywa aktywność gracza i czyści/ustawia AFK.
  *
@@ -23,6 +27,7 @@ import pl.bell.bellchat.BellChat;
 public class AfkListener implements Listener {
 
     private final BellChat plugin;
+    private final Map<UUID, Long> lastActivityTouch = new ConcurrentHashMap<>();
 
     public AfkListener(BellChat plugin) { this.plugin = plugin; }
 
@@ -33,15 +38,23 @@ public class AfkListener implements Listener {
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
-        plugin.getAfkManager().remove(event.getPlayer().getUniqueId());
+        UUID uuid = event.getPlayer().getUniqueId();
+        plugin.getAfkManager().remove(uuid);
+        lastActivityTouch.remove(uuid);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onMove(PlayerMoveEvent event) {
         Location from = event.getFrom();
         Location to   = event.getTo();
-        // Ignoruj sam obrót kamery — liczy się realna zmiana pozycji
         if (from.getX() == to.getX() && from.getY() == to.getY() && from.getZ() == to.getZ()) return;
+
+        UUID uuid = event.getPlayer().getUniqueId();
+        long now = System.currentTimeMillis();
+        Long last = lastActivityTouch.get(uuid);
+        if (last != null && now - last < 1000) return;
+        lastActivityTouch.put(uuid, now);
+
         plugin.getAfkManager().markActivity(event.getPlayer());
     }
 

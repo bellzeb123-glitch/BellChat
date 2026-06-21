@@ -40,12 +40,13 @@ public class BellChat extends JavaPlugin {
     private AfkManager        afkManager;
     private AfkConfigManager  afkConfigManager;
     private AfkAdminGUI       afkAdminGUI;
+    private ChatListener      chatListener;
 
     @Override
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
-        printBanner();
+        getServer().getScheduler().runTaskLater(this, this::printBanner, 1L);
 
         this.messageManager   = new MessageManager(this);
         this.luckPermsManager = new LuckPermsManager(this);
@@ -73,7 +74,8 @@ public class BellChat extends JavaPlugin {
             pl.bell.bellchat.integration.BellLPIntegration.tryRegister(this), 60L);
 
         // Listeners
-        getServer().getPluginManager().registerEvents(new ChatListener(this), this);
+        this.chatListener = new ChatListener(this);
+        getServer().getPluginManager().registerEvents(chatListener, this);
         getServer().getPluginManager().registerEvents(new VIPJoinListener(this), this);
         getServer().getPluginManager().registerEvents(tablistListener, this);
         getServer().getPluginManager().registerEvents(new AfkListener(this), this);
@@ -120,13 +122,14 @@ public class BellChat extends JavaPlugin {
         if (antispamManager  != null) antispamManager.reload();
         if (afkConfigManager != null) afkConfigManager.reload();
         if (afkManager       != null) afkManager.reload();
+        if (chatListener     != null) chatListener.reloadProfanityPatterns();
         if (tablistListener  != null) tablistListener.refreshAll();
         getLogger().info("BellChat reloaded.");
     }
 
     private void printBanner() {
+        if (org.bukkit.Bukkit.getPluginManager().getPlugin("BellChatPro") != null) return;
         var c = org.bukkit.Bukkit.getConsoleSender();
-        boolean proActive = org.bukkit.Bukkit.getPluginManager().getPlugin("BellChatPro") != null;
         c.sendMessage("§r");
         c.sendMessage("§6  ██████╗ ███████╗██╗     ██╗          ");
         c.sendMessage("§6  ██╔══██╗██╔════╝██║     ██║          ");
@@ -137,7 +140,7 @@ public class BellChat extends JavaPlugin {
         c.sendMessage("§r");
         c.sendMessage("§7  Version §f" + getDescription().getVersion()
                 + "  §7│  Author §bBellzeb");
-        c.sendMessage("§7  Status  §aFree §7│ " + (proActive ? "§5Pro §aActive" : "§7Pro §5Coming Soon"));
+        c.sendMessage("§7  Status  §aFree §7│ §7Multi-Channel Chat System");
         c.sendMessage("§r");
     }
 

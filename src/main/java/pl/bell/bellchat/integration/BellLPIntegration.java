@@ -50,8 +50,23 @@ public final class BellLPIntegration {
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) {
             switch (method.getName()) {
-                case "onGroupSynced", "onAllGroupsSynced" -> plugin.reload();
+                case "onGroupSynced", "onAllGroupsSynced" -> {
+                    if (plugin.getAfkConfigManager() != null) {
+                        plugin.getAfkConfigManager().invalidateAllCaches();
+                    }
+                    if (plugin.getTablistListener() != null) {
+                        Bukkit.getOnlinePlayers().forEach(p ->
+                                plugin.getTablistListener().updateTablist(p));
+                    }
+                }
                 case "refreshPlayer" -> {
+                    UUID uuid = (UUID) args[0];
+                    Player player = Bukkit.getPlayer(uuid);
+                    if (player != null && plugin.getTablistListener() != null) {
+                        plugin.getTablistListener().updateTablist(player);
+                    }
+                }
+                case "onVipGranted", "onVipRevoked" -> {
                     UUID uuid = (UUID) args[0];
                     Player player = Bukkit.getPlayer(uuid);
                     if (player != null && plugin.getTablistListener() != null) {
