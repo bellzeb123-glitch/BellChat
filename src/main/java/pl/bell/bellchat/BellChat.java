@@ -126,6 +126,7 @@ public class BellChat extends JavaPlugin {
 
     private void printBanner() {
         var c = org.bukkit.Bukkit.getConsoleSender();
+        boolean proActive = org.bukkit.Bukkit.getPluginManager().getPlugin("BellChatPro") != null;
         c.sendMessage("§r");
         c.sendMessage("§6  ██████╗ ███████╗██╗     ██╗          ");
         c.sendMessage("§6  ██╔══██╗██╔════╝██║     ██║          ");
@@ -136,7 +137,7 @@ public class BellChat extends JavaPlugin {
         c.sendMessage("§r");
         c.sendMessage("§7  Version §f" + getDescription().getVersion()
                 + "  §7│  Author §bBellzeb");
-        c.sendMessage("§7  Status  §aFree §7│ §7Pro §5Coming Soon");
+        c.sendMessage("§7  Status  §aFree §7│ " + (proActive ? "§5Pro §aActive" : "§7Pro §5Coming Soon"));
         c.sendMessage("§r");
     }
 
