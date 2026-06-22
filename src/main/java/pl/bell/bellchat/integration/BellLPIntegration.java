@@ -49,6 +49,14 @@ public final class BellLPIntegration {
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) {
+            if (method.getDeclaringClass() == Object.class) {
+                return switch (method.getName()) {
+                    case "equals" -> proxy == args[0];
+                    case "hashCode" -> System.identityHashCode(proxy);
+                    case "toString" -> "BellChat/BellLP@" + Integer.toHexString(System.identityHashCode(proxy));
+                    default -> null;
+                };
+            }
             switch (method.getName()) {
                 case "onGroupSynced", "onAllGroupsSynced" -> {
                     if (plugin.getAfkConfigManager() != null) {
