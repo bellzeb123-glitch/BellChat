@@ -275,13 +275,8 @@ public class ChannelManager {
         String prefix      = rawLpPrefix != null ? rawLpPrefix : "";
         String suffix      = lp.getSuffix(sender);
         if (suffix == null) suffix = "";
-        String group       = lp.getPrimaryGroup(sender);
-
-        // Wyciągnij kolor LP — używany dla {lp-color} placeholdera.
-        // Dzięki temu config może być uniwersalny:
-        //   format: "{prefix}{lp-color}{player}{lp-color}: &f{message}"
-        // i każda grupa LP dostaje swój własny kolor automatycznie.
-        String lpColor = extractLastColorCode(prefix);
+        String group       = resolveChatGroup(sender);
+        String lpColor     = resolveLpColor(sender, prefix);
 
         // Wybór formatu (group-formats tylko dla GLOBAL)
         String format = channel.getFormat();
@@ -367,7 +362,9 @@ public class ChannelManager {
         int playerIdx = format.indexOf("{player}");
         if (playerIdx < 0) playerIdx = format.indexOf("{displayname}");
         if (playerIdx > 0 && format.substring(0, playerIdx).endsWith("{lp-color}")) {
-            nickColorCode = lpColor;
+            nickColorCode = lpColor.isBlank() || "&f".equals(lpColor)
+                    ? resolveLpColor(sender, plugin.getLuckPermsManager().getPrefix(sender))
+                    : lpColor;
         } else {
             nickColorCode = extractColorBeforePlayer(format);
         }
@@ -407,30 +404,98 @@ public class ChannelManager {
     }
 
     /**
-     * Wyciąga ostatni kod koloru (§ lub &) z LP prefix.
-     * Zwracany jako string w formacie & — np. "&5" dla fioletowego.
-     *
-     * Dlaczego: LP prefix może mieć kolor np. "§5[VIP] " albo "&5[VIP] ".
-     * Wyciągamy ten kolor, by w formacie czatu nick gracza miał taki sam
-     * kolor jak jego prefix LP — bez hardcoded wartości w config.
-     *
-     * Pomija kody formatowania (l/o/n/m/k) — bierze tylko prawdziwe kolory (0-9, a-f).
-     * Jeśli prefix nie ma żadnego koloru → zwraca "&f" (biały).
+     * Grupa do group-formats: najwyższa dziedziczona grupa z wpisem w configu
+     * (np. vip mimo primary=default po BellGate), potem primary.
      */
-    private String extractLastColorCode(String s) {
-        if (s == null || s.isEmpty()) return "&f";
-        String lastColor = "&f";
-        for (int i = 0; i < s.length() - 1; i++) {
-            char c = s.charAt(i);
-            if (c == '§' || c == '&') {
-                char code = Character.toLowerCase(s.charAt(i + 1));
-                // Tylko kolory, nie formatowania
-                if ("0123456789abcdef".indexOf(code) >= 0) {
-                    lastColor = "&" + code;
-                }
+    private String resolveChatGroup(Player player) {
+        var lp = plugin.getLuckPermsManager();
+        var groupFormats = plugin.getConfig().getConfigurationSection("group-formats");
+        if (groupFormats != null) {
+            for (String g : lp.getInheritedGroupsByWeight(player)) {
+                if (groupFormats.contains(g)) return g;
             }
         }
-        return lastColor;
+        return lp.getPrimaryGroup(player);
+    }
+
+    /**
+     * Kolor nicku z LP prefix. Prefix bywa kolorowy, a {lp-color} białe gdy:
+     * - prefix kończy się resetem / hexem nierozpoznanym przez stary parser
+     * - primary ≠ vip, ale prefix pochodzi z dziedziczonej grupy
+     * Fallback: pierwszy kolor z prefixu, potem getChatColor() z LP.
+     */
+    private String resolveLpColor(Player player, String prefix) {
+        String last = extractLastColorCode(prefix);
+        if (!"&f".equals(last)) return last;
+        String first = extractFirstColorCode(prefix);
+        if (!"&f".equals(first)) return first;
+        if (prefix != null && !prefix.isBlank()) {
+            return plugin.getLuckPermsManager().getChatColor(player).replace('§', '&');
+        }
+        return "&f";
+    }
+
+    /**
+     * Wyciąga ostatni kod koloru (§ lub &) z LP prefix.
+     */
+    private String extractLastColorCode(String s) {
+        return scanColorCode(s, false);
+    }
+
+    private String extractFirstColorCode(String s) {
+        return scanColorCode(s, true);
+    }
+
+    /**
+     * Skanuje prefix pod kątem &-kolorów (w tym &#RRGGBB i &x&R&R&G&G&B&B).
+     */
+    private String scanColorCode(String s, boolean firstOnly) {
+        if (s == null || s.isEmpty()) return "&f";
+        String found = "&f";
+        for (int i = 0; i < s.length(); i++) {
+            char marker = s.charAt(i);
+            if (marker != '§' && marker != '&') continue;
+
+            String parsed = parseColorAt(s, i, marker);
+            if (parsed == null) continue;
+
+            if (firstOnly) return parsed;
+            found = parsed;
+
+            if (parsed.startsWith("&#") || parsed.startsWith("&x")) {
+                i += parsed.length() - 1;
+            } else {
+                i++;
+            }
+        }
+        return found;
+    }
+
+    /** Zwraca &kolor od pozycji markera lub null. */
+    private String parseColorAt(String s, int i, char marker) {
+        if (i + 1 >= s.length()) return null;
+        char code = Character.toLowerCase(s.charAt(i + 1));
+        if ("0123456789abcdef".indexOf(code) >= 0) {
+            return "&" + code;
+        }
+        if (code == '#' && i + 7 < s.length()) {
+            String hex = s.substring(i + 2, i + 8);
+            if (hex.matches("[0-9A-Fa-f]{6}")) {
+                return "&#" + hex.toLowerCase();
+            }
+        }
+        if (code == 'x' && i + 13 < s.length()) {
+            StringBuilder hex = new StringBuilder("&x");
+            for (int j = 0; j < 6; j++) {
+                int pos = i + 2 + j * 2;
+                if (s.charAt(pos) != marker) return null;
+                char h = Character.toLowerCase(s.charAt(pos + 1));
+                if ("0123456789abcdef".indexOf(h) < 0) return null;
+                hex.append('&').append(h);
+            }
+            return hex.toString();
+        }
+        return null;
     }
 
     /**

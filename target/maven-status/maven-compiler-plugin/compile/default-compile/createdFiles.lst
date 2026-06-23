@@ -50,6 +50,7 @@ pl\bell\bellchat\managers\AfkConfigManager$CachedRule.class
 pl\bell\bellchat\channel\Channel.class
 pl\bell\bellchat\managers\AntispamManager$SpamResult.class
 pl\bell\bellchat\commands\ClearChatCommand.class
+pl\bell\bellchat\integration\BellSuiteModule$Json.class
 pl\bell\bellchat\managers\AfkManager.class
 pl\bell\bellchat\listeners\ChatListener.class
 pl\bell\bellchat\managers\MessageManager.class
@@ -59,6 +60,7 @@ pl\bell\bellchat\listeners\AdminChatInputListener.class
 pl\bell\bellchat\gui\AdminGUI.class
 pl\bell\bellchat\commands\AfkCommand.class
 pl\bell\bellchat\managers\ChatStateManager.class
+pl\bell\bellchat\integration\BellSuiteModule.class
 pl\bell\bellchat\listeners\TablistListener.class
 pl\bell\bellchat\managers\BroadcastManager.class
 pl\bell\bellchat\gui\BroadcastAdminGUI.class

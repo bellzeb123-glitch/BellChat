@@ -70,16 +70,32 @@ public class LuckPermsManager {
         if (luckPerms == null) return "&f";
         User user = luckPerms.getUserManager().getUser(player.getUniqueId());
         if (user == null) return "&f";
-        // Try to get color from prefix first character
         String prefix = getPrefix(player);
-        if (prefix != null && prefix.length() >= 2 && prefix.charAt(0) == '\u00a7') {
-            return "\u00a7" + prefix.charAt(1);
+        if (prefix != null && !prefix.isEmpty()) {
+            for (int i = 0; i < prefix.length() - 1; i++) {
+                char c = prefix.charAt(i);
+                if (c == '\u00a7' || c == '&') {
+                    char code = Character.toLowerCase(prefix.charAt(i + 1));
+                    if ("0123456789abcdef".indexOf(code) >= 0) {
+                        return "&" + code;
+                    }
+                }
+            }
         }
-        // Fallback based on primary group
-        return switch (user.getPrimaryGroup().toLowerCase()) {
-            case "admin"  -> "\u00a76";
-            case "vip"    -> "\u00a75";
-            default       -> "\u00a7f";
+        for (String group : getInheritedGroupsByWeight(player)) {
+            String color = groupChatColor(group);
+            if (color != null) return color;
+        }
+        String primary = groupChatColor(user.getPrimaryGroup());
+        return primary != null ? primary : "&f";
+    }
+
+    private String groupChatColor(String group) {
+        if (group == null) return null;
+        return switch (group.toLowerCase()) {
+            case "admin" -> "&6";
+            case "vip"   -> "&5";
+            default      -> null;
         };
     }
 

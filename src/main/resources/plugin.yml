@@ -9,6 +9,7 @@ softdepend:
   - LuckPerms
   - PlaceholderAPI
   - BellLP
+  - BellHub
 
 commands:
   bellchat:

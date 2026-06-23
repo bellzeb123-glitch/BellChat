@@ -40,6 +40,13 @@
             <version>5.4</version>
             <scope>provided</scope>
         </dependency>
+        <!-- Kontrakt panelu BellSuite — provided (runtime z BellSuite, NIE bundlowane) -->
+        <dependency>
+            <groupId>pl.bell</groupId>
+            <artifactId>bell-hub-api</artifactId>
+            <version>0.1.0</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>
