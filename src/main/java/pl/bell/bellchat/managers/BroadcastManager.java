@@ -178,6 +178,15 @@ public class BroadcastManager {
         reload();
     }
 
+    public void editMessage(String key, int index, String newMessage) {
+        List<String> messages = getMessages(key);
+        if (index < 0 || index >= messages.size()) return;
+        messages.set(index, newMessage);
+        plugin.getConfig().set("broadcasts.slots." + key + ".messages", messages);
+        plugin.saveConfig();
+        reload();
+    }
+
     public void createSlot(String key) {
         String path = "broadcasts.slots." + key;
         plugin.getConfig().set(path + ".enabled", true);

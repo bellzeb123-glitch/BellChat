@@ -163,7 +163,63 @@ public final class BellSuiteModule implements BellModule, Listener {
                         ActionField.text("channel", "ID kanału"),
                         ActionField.bool("enabled", "Włączony")),
                 ActionDef.destructive("channel.delete", "Usuń kanał", "Kanały",
-                        ActionField.text("channel", "ID kanału")));
+                        ActionField.text("channel", "ID kanału")),
+                ActionDef.of("antispam.toggle", "Włącz/Wyłącz antispam", "Ustawienia",
+                        ActionField.bool("enabled", "Włączone")),
+                ActionDef.of("urlFilter.toggle", "Włącz/Wyłącz filtr URL", "Ustawienia",
+                        ActionField.bool("enabled", "Włączone")),
+                ActionDef.of("profanity.toggle", "Włącz/Wyłącz filtr wulgaryzmów", "Ustawienia",
+                        ActionField.bool("enabled", "Włączone")),
+                ActionDef.of("vipNotification.toggle", "Włącz/Wyłącz powiadomienia VIP", "Ustawienia",
+                        ActionField.bool("enabled", "Włączone")),
+                ActionDef.of("hoverClick.toggle", "Włącz/Wyłącz hover/click", "Ustawienia",
+                        ActionField.bool("enabled", "Włączone")),
+                ActionDef.of("blockDuplicate.toggle", "Włącz/Wyłącz blokada duplikatów", "Ustawienia",
+                        ActionField.bool("enabled", "Włączone")),
+                ActionDef.of("language.set", "Zmień język", "Ustawienia",
+                        ActionField.select("lang", "Język", List.of("pl", "en"))),
+                ActionDef.of("antispam.setCooldown", "Ustaw cooldown antyspamu", "Ustawienia",
+                        ActionField.text("seconds", "Sekundy (np. 3)")),
+                ActionDef.of("afk.setGroup", "Ustaw reguły AFK grupy", "AFK",
+                        ActionField.text("group", "Nazwa grupy"),
+                        ActionField.text("autoAfk", "Auto-AFK sekundy"),
+                        ActionField.bool("kickEnabled", "Kick włączony"),
+                        ActionField.text("kickSeconds", "Kick po sekundach")),
+                ActionDef.of("channel.create", "Utwórz kanał", "Kanały",
+                        ActionField.text("id", "ID kanału (a-z, 2-25 zn.)"),
+                        ActionField.select("type", "Typ", List.of("GLOBAL", "LOCAL", "VIP", "ADMIN")),
+                        ActionField.text("displayName", "Nazwa wyświetlana (obsługuje &kolory)"),
+                        ActionField.text("format", "Format czatu"),
+                        ActionField.text("localRadius", "Zasięg lokalny (-1 = bez limitu)"),
+                        ActionField.text("permission", "Uprawnienie (puste = brak)")),
+                ActionDef.of("channel.update", "Edytuj kanał", "Kanały",
+                        ActionField.text("id", "ID kanału"),
+                        ActionField.text("displayName", "Nazwa wyświetlana"),
+                        ActionField.text("format", "Format czatu"),
+                        ActionField.text("localRadius", "Zasięg lokalny"),
+                        ActionField.text("permission", "Uprawnienie")),
+                ActionDef.of("broadcast.createSlot", "Utwórz slot broadcastu", "Broadcast",
+                        ActionField.text("slot", "ID slotu (a-z, 2-20 zn.)")),
+                ActionDef.destructive("broadcast.deleteSlot", "Usuń slot broadcastu", "Broadcast",
+                        ActionField.text("slot", "ID slotu")),
+                ActionDef.of("broadcast.setInterval", "Ustaw interwał slotu", "Broadcast",
+                        ActionField.text("slot", "ID slotu"),
+                        ActionField.text("seconds", "Sekundy (30-86400)")),
+                ActionDef.of("broadcast.setRandom", "Ustaw tryb losowy", "Broadcast",
+                        ActionField.text("slot", "ID slotu"),
+                        ActionField.bool("random", "Losowy")),
+                ActionDef.of("broadcast.addMessage", "Dodaj wiadomość do slotu", "Broadcast",
+                        ActionField.text("slot", "ID slotu"),
+                        ActionField.text("message", "Wiadomość (obsługuje &kolory)")),
+                ActionDef.of("broadcast.removeMessage", "Usuń wiadomość ze slotu", "Broadcast",
+                        ActionField.text("slot", "ID slotu"),
+                        ActionField.text("index", "Numer wiadomości (od 0)")),
+                ActionDef.of("broadcast.editMessage", "Edytuj wiadomość w slocie", "Broadcast",
+                        ActionField.text("slot", "ID slotu"),
+                        ActionField.text("index", "Numer wiadomości (od 0)"),
+                        ActionField.text("message", "Nowa treść wiadomości")),
+                ActionDef.of("broadcast.test", "Wyślij test broadcastu", "Broadcast",
+                        ActionField.text("slot", "ID slotu")));
     }
 
     @Override
@@ -243,6 +299,83 @@ public final class BellSuiteModule implements BellModule, Listener {
                 plugin.getBroadcastManager().setSlotEnabled(slot, en);
                 return ActionResult.ok("Slot " + slot + (en ? " włączony." : " wyłączony."));
             }
+            case "broadcast.createSlot": {
+                String slot = p.getOrDefault("slot", "").trim().toLowerCase();
+                if (!slot.matches("[a-z][a-z0-9_]{1,20}"))
+                    return ActionResult.error("Nieprawidlowe ID slotu (a-z, 2-20 zn.).");
+                if (plugin.getBroadcastManager().hasSlot(slot))
+                    return ActionResult.error("Slot o tym ID juz istnieje.");
+                plugin.getBroadcastManager().createSlot(slot);
+                return ActionResult.ok("Slot " + slot + " utworzony.");
+            }
+            case "broadcast.deleteSlot": {
+                String slot = p.getOrDefault("slot", "").trim();
+                if (slot.isEmpty()) return ActionResult.error("Podaj ID slotu.");
+                if (!plugin.getBroadcastManager().hasSlot(slot)) return ActionResult.error("Slot nie istnieje.");
+                plugin.getBroadcastManager().deleteSlot(slot);
+                return ActionResult.ok("Slot " + slot + " usuniety.");
+            }
+            case "broadcast.setInterval": {
+                String slot = p.getOrDefault("slot", "").trim();
+                if (slot.isEmpty()) return ActionResult.error("Podaj ID slotu.");
+                if (!plugin.getBroadcastManager().hasSlot(slot)) return ActionResult.error("Slot nie istnieje.");
+                int sec;
+                try { sec = Integer.parseInt(p.getOrDefault("seconds", "300").trim()); }
+                catch (NumberFormatException e) { return ActionResult.error("Podaj liczbe sekund."); }
+                if (sec < 30 || sec > 86400) return ActionResult.error("Wartosc 30-86400.");
+                plugin.getBroadcastManager().setIntervalSeconds(slot, sec);
+                return ActionResult.ok("Interwal slotu " + slot + ": " + sec + "s.");
+            }
+            case "broadcast.setRandom": {
+                String slot = p.getOrDefault("slot", "").trim();
+                if (slot.isEmpty()) return ActionResult.error("Podaj ID slotu.");
+                if (!plugin.getBroadcastManager().hasSlot(slot)) return ActionResult.error("Slot nie istnieje.");
+                boolean rnd = "true".equals(p.get("random"));
+                plugin.getBroadcastManager().setRandom(slot, rnd);
+                return ActionResult.ok("Slot " + slot + (rnd ? " — tryb losowy." : " — tryb kolejny."));
+            }
+            case "broadcast.addMessage": {
+                String slot = p.getOrDefault("slot", "").trim();
+                if (slot.isEmpty()) return ActionResult.error("Podaj ID slotu.");
+                if (!plugin.getBroadcastManager().hasSlot(slot)) return ActionResult.error("Slot nie istnieje.");
+                String msg = p.getOrDefault("message", "").trim();
+                if (msg.isEmpty()) return ActionResult.error("Podaj tresc wiadomosci.");
+                plugin.getBroadcastManager().addMessage(slot, msg);
+                return ActionResult.ok("Wiadomosc dodana do slotu " + slot + ".");
+            }
+            case "broadcast.removeMessage": {
+                String slot = p.getOrDefault("slot", "").trim();
+                if (slot.isEmpty()) return ActionResult.error("Podaj ID slotu.");
+                if (!plugin.getBroadcastManager().hasSlot(slot)) return ActionResult.error("Slot nie istnieje.");
+                int idx;
+                try { idx = Integer.parseInt(p.getOrDefault("index", "0").trim()); }
+                catch (NumberFormatException e) { return ActionResult.error("Podaj numer wiadomosci."); }
+                var msgs = plugin.getBroadcastManager().getMessages(slot);
+                if (idx < 0 || idx >= msgs.size()) return ActionResult.error("Nieprawidlowy numer wiadomosci.");
+                plugin.getBroadcastManager().removeMessage(slot, idx);
+                return ActionResult.ok("Wiadomosc #" + (idx + 1) + " usunieta ze slotu " + slot + ".");
+            }
+            case "broadcast.editMessage": {
+                String slot = p.getOrDefault("slot", "").trim();
+                if (slot.isEmpty()) return ActionResult.error("Podaj ID slotu.");
+                if (!plugin.getBroadcastManager().hasSlot(slot)) return ActionResult.error("Slot nie istnieje.");
+                int idx;
+                try { idx = Integer.parseInt(p.getOrDefault("index", "0").trim()); }
+                catch (NumberFormatException e) { return ActionResult.error("Podaj numer wiadomosci."); }
+                var msgs = plugin.getBroadcastManager().getMessages(slot);
+                if (idx < 0 || idx >= msgs.size()) return ActionResult.error("Nieprawidlowy numer wiadomosci.");
+                String msg = p.getOrDefault("message", "").trim();
+                if (msg.isEmpty()) return ActionResult.error("Podaj nowa tresc wiadomosci.");
+                plugin.getBroadcastManager().editMessage(slot, idx, msg);
+                return ActionResult.ok("Wiadomosc #" + (idx + 1) + " zaktualizowana.");
+            }
+            case "broadcast.test": {
+                String slot = p.getOrDefault("slot", "").trim();
+                if (slot.isEmpty()) return ActionResult.error("Podaj ID slotu.");
+                if (!plugin.getBroadcastManager().hasSlot(slot)) return ActionResult.error("Slot nie istnieje.");
+                plugin.getBroadcastManager().sendTest(slot);
+                return ActionResult.ok("Wyslano testowy broadcast ze slotu " + slot + ".");
+            }
             case "channel.toggle": {
                 String chId = p.getOrDefault("channel", "").trim();
                 if (chId.isEmpty()) return ActionResult.error("Podaj ID kanału.");
@@ -257,6 +390,116 @@ public final class BellSuiteModule implements BellModule, Listener {
                 boolean ok = plugin.getChannelManager().deleteChannel(chId);
                 if (!ok) return ActionResult.error("Nie można usunąć kanału (nie istnieje lub domyślny).");
                 return ActionResult.ok("Kanał " + chId + " usunięty.");
+            }
+            case "channel.create": {
+                String id = p.getOrDefault("id", "").trim().toLowerCase();
+                if (id.isEmpty()) return ActionResult.error("Podaj ID kanału.");
+                if (!plugin.getChannelManager().isValidChannelId(id))
+                    return ActionResult.error("Nieprawidłowe ID (a-z, 2-25 znaków).");
+                String typeStr = p.getOrDefault("type", "GLOBAL").toUpperCase();
+                pl.bell.bellchat.channel.ChannelType type;
+                try { type = pl.bell.bellchat.channel.ChannelType.valueOf(typeStr); }
+                catch (IllegalArgumentException e) { return ActionResult.error("Nieznany typ: " + typeStr); }
+                String displayName = p.getOrDefault("displayName", "&f" + id);
+                String format = p.getOrDefault("format", "&f{player}: {message}");
+                int radius = -1;
+                try { radius = Integer.parseInt(p.getOrDefault("localRadius", "-1").trim()); }
+                catch (NumberFormatException ignored) {}
+                String perm = p.getOrDefault("permission", "").trim();
+                if (perm.isEmpty()) perm = plugin.getChannelManager().defaultPermissionForType(type);
+                boolean ok = plugin.getChannelManager().createChannel(id, type, displayName, format, radius, perm);
+                if (!ok) return ActionResult.error("Kanał o tym ID juz istnieje.");
+                return ActionResult.ok("Kanał " + id + " utworzony.");
+            }
+            case "channel.update": {
+                String id = p.getOrDefault("id", "").trim().toLowerCase();
+                if (id.isEmpty()) return ActionResult.error("Podaj ID kanału.");
+                if (plugin.getChannelManager().getChannel(id).isEmpty())
+                    return ActionResult.error("Kanał nie istnieje.");
+                String displayName = p.getOrDefault("displayName", "").trim();
+                String format = p.getOrDefault("format", "").trim();
+                int radius = -1;
+                try { radius = Integer.parseInt(p.getOrDefault("localRadius", "-1").trim()); }
+                catch (NumberFormatException ignored) {}
+                String perm = p.getOrDefault("permission", "").trim();
+                var ch = plugin.getChannelManager().getChannel(id).get();
+                plugin.getChannelManager().updateChannel(id,
+                        displayName.isEmpty() ? ch.getDisplayName() : displayName,
+                        format.isEmpty() ? ch.getFormat() : format,
+                        radius, perm);
+                return ActionResult.ok("Kanał " + id + " zaktualizowany.");
+            }
+            case "antispam.toggle": {
+                boolean en = "true".equals(p.get("enabled"));
+                plugin.getConfig().set("antispam.enabled", en);
+                plugin.saveConfig();
+                plugin.getAntispamManager().reload();
+                return ActionResult.ok(en ? "Antispam włączony." : "Antispam wyłączony.");
+            }
+            case "urlFilter.toggle": {
+                boolean en = "true".equals(p.get("enabled"));
+                plugin.getConfig().set("url-filter.enabled", en);
+                plugin.saveConfig();
+                plugin.getUrlFilterManager().reload();
+                return ActionResult.ok(en ? "Filtr URL włączony." : "Filtr URL wyłączony.");
+            }
+            case "profanity.toggle": {
+                boolean en = "true".equals(p.get("enabled"));
+                plugin.getConfig().set("profanity-filter.enabled", en);
+                plugin.saveConfig();
+                return ActionResult.ok(en ? "Filtr wulgaryzmów włączony." : "Filtr wulgaryzmów wyłączony.");
+            }
+            case "vipNotification.toggle": {
+                boolean en = "true".equals(p.get("enabled"));
+                plugin.getConfig().set("vip-notification.enabled", en);
+                plugin.saveConfig();
+                return ActionResult.ok(en ? "Powiadomienia VIP włączone." : "Powiadomienia VIP wyłączone.");
+            }
+            case "hoverClick.toggle": {
+                boolean en = "true".equals(p.get("enabled"));
+                plugin.getConfig().set("chat.hover-click.enabled", en);
+                plugin.saveConfig();
+                return ActionResult.ok(en ? "Hover/click włączony." : "Hover/click wyłączony.");
+            }
+            case "blockDuplicate.toggle": {
+                boolean en = "true".equals(p.get("enabled"));
+                plugin.getConfig().set("antispam.block-duplicate", en);
+                plugin.saveConfig();
+                plugin.getAntispamManager().reload();
+                return ActionResult.ok(en ? "Blokada duplikatów włączona." : "Blokada duplikatów wyłączona.");
+            }
+            case "language.set": {
+                String lang = p.getOrDefault("lang", "en").toLowerCase();
+                if (!lang.equals("pl") && !lang.equals("en")) return ActionResult.error("Nieprawidłowy język.");
+                plugin.getConfig().set("language", lang);
+                plugin.saveConfig();
+                plugin.reload();
+                return ActionResult.ok("Język zmieniony na " + lang.toUpperCase() + ".");
+            }
+            case "antispam.setCooldown": {
+                int sec;
+                try { sec = Integer.parseInt(p.getOrDefault("seconds", "3").trim()); }
+                catch (NumberFormatException e) { return ActionResult.error("Podaj liczbę sekund."); }
+                if (sec < 0 || sec > 300) return ActionResult.error("Wartość 0-300.");
+                plugin.getConfig().set("antispam.cooldown-seconds", sec);
+                plugin.saveConfig();
+                plugin.getAntispamManager().reload();
+                return ActionResult.ok("Cooldown antyspamu: " + sec + "s.");
+            }
+            case "afk.setGroup": {
+                String group = p.getOrDefault("group", "").trim();
+                if (group.isEmpty()) return ActionResult.error("Podaj nazwę grupy.");
+                int autoAfk;
+                try { autoAfk = Integer.parseInt(p.getOrDefault("autoAfk", "180").trim()); }
+                catch (NumberFormatException e) { return ActionResult.error("Auto-AFK: podaj liczbę sekund."); }
+                boolean kickEn = "true".equals(p.get("kickEnabled"));
+                int kickSec;
+                try { kickSec = Integer.parseInt(p.getOrDefault("kickSeconds", "900").trim()); }
+                catch (NumberFormatException e) { return ActionResult.error("Kick: podaj liczbę sekund."); }
+                plugin.getAfkConfigManager().saveGroupRule(group,
+                        new pl.bell.bellchat.model.AfkGroupRule(autoAfk, kickEn, kickSec));
+                if (plugin.getAfkManager() != null) plugin.getAfkManager().reload();
+                return ActionResult.ok("Reguly AFK grupy " + group + " zapisane.");
             }
             default:
                 return ActionResult.error("Nieznana akcja: " + a);
@@ -307,7 +550,13 @@ public final class BellSuiteModule implements BellModule, Listener {
               .append(",\"kickEnabled\":").append(rule.isKickEnabled())
               .append(",\"kickSeconds\":").append(rule.getKickSeconds()).append("}");
         }
-        sb.append("]}}");
+        sb.append("]}");
+        sb.append(",\"profanity\":{\"enabled\":").append(plugin.getConfig().getBoolean("profanity-filter.enabled", false)).append("}");
+        sb.append(",\"vipNotification\":{\"enabled\":").append(plugin.getConfig().getBoolean("vip-notification.enabled", true)).append("}");
+        sb.append(",\"hoverClick\":{\"enabled\":").append(plugin.getConfig().getBoolean("chat.hover-click.enabled", true)).append("}");
+        sb.append(",\"blockDuplicate\":{\"enabled\":").append(plugin.getConfig().getBoolean("antispam.block-duplicate", true)).append("}");
+        sb.append(",\"language\":").append(q(plugin.getConfig().getString("language", "en")));
+        sb.append("}");
         return sb.toString();
     }
 

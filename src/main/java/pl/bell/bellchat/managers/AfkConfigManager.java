@@ -3,6 +3,7 @@ package pl.bell.bellchat.managers;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import pl.bell.bellchat.BellChat;
+import pl.bell.bellchat.integration.BellLPIntegration;
 import pl.bell.bellchat.model.AfkGroupRule;
 
 import java.util.ArrayList;
@@ -93,6 +94,8 @@ public final class AfkConfigManager {
         plugin.getConfig().set(base + "kick-enabled", rule.isKickEnabled());
         plugin.getConfig().set(base + "kick-seconds", rule.getKickSeconds());
         plugin.saveConfig();
+        BellLPIntegration.pushAfkToBellLP(id, rule.getAutoAfkSeconds(),
+                rule.isKickEnabled(), rule.getKickSeconds());
     }
 
     public void clearGroupOverride(String group) {
@@ -101,6 +104,7 @@ public final class AfkConfigManager {
         configured.remove(id);
         plugin.getConfig().set(PATH_GROUPS + "." + id, null);
         plugin.saveConfig();
+        BellLPIntegration.pushAfkClearedToBellLP(id);
     }
 
     /**
