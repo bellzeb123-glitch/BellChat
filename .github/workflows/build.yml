@@ -27,7 +27,7 @@ jobs:
           cache: maven
 
       - name: Install bell-hub-api
-        run: mvn -B -f BellHub/bell-suite-api/pom.xml clean install -DskipTests -q
+        run: mvn -B -f bell-hub-api/pom.xml clean install -DskipTests -q
 
       - name: Build with Maven
         run: mvn -B clean package -DskipTests -q

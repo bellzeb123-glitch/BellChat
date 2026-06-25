@@ -12,13 +12,13 @@ import pl.bell.bellchat.BellChat;
 import pl.bell.bellchat.event.BellChatMessageEvent;
 import pl.bell.bellchat.managers.MuteManager;
 import pl.bell.bellchat.model.MuteEntry;
-import pl.bell.suite.api.ActionDef;
-import pl.bell.suite.api.ActionField;
-import pl.bell.suite.api.ActionResult;
-import pl.bell.suite.api.Actor;
-import pl.bell.suite.api.BellModule;
-import pl.bell.suite.api.Stat;
-import pl.bell.suite.api.SuiteAction;
+import pl.bell.hub.api.ActionDef;
+import pl.bell.hub.api.ActionField;
+import pl.bell.hub.api.ActionResult;
+import pl.bell.hub.api.Actor;
+import pl.bell.hub.api.BellModule;
+import pl.bell.hub.api.Stat;
+import pl.bell.hub.api.HubAction;
 
 import java.lang.reflect.Method;
 import java.util.ArrayDeque;
@@ -28,17 +28,17 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Modul BellChat w panelu BellSuite. Tylko ODCZYT + strumien na zywo — NIE duplikuje
+ * Modul BellChat w panelu BellHub. Tylko ODCZYT + strumien na zywo — NIE duplikuje
  * logiki czatu, jedynie nasluchuje istniejacego {@link BellChatMessageEvent} (MONITOR,
  * po naniesieniu kolorow przez BellChatPro) i:
  *  - buforuje ostatnie {@value #BUFFER} wiadomosci (initial load przez {@code view("recent")}),
- *  - publikuje nowe do LiveBus BellSuite (temat {@code "chat"}) → WebSocket → panel.
+ *  - publikuje nowe do LiveBus BellHub (temat {@code "chat"}) → WebSocket → panel.
  *
- * <p>Rejestrowany w {@code onEnable} BellChat tylko gdy BellSuite jest obecny.
- * Publikacja do LiveBus przez reflection na classloaderze BellSuite (zero twardej
- * zaleznosci runtime poza {@code bell-suite-api}, ktore jest {@code provided}).
+ * <p>Rejestrowany w {@code onEnable} BellChat tylko gdy BellHub jest obecny.
+ * Publikacja do LiveBus przez reflection na classloaderze BellHub (zero twardej
+ * zaleznosci runtime poza {@code bell-hub-api}, ktore jest {@code provided}).
  */
-public final class BellSuiteModule implements BellModule, Listener {
+public final class BellHubModule implements BellModule, Listener {
 
     public static final String TOPIC = "chat";
     private static final int BUFFER = 100;
@@ -49,10 +49,10 @@ public final class BellSuiteModule implements BellModule, Listener {
 
     private final BellChat plugin;
     private final Deque<String> recent = new ArrayDeque<>(BUFFER); // gotowe obiekty JSON
-    private Method publish;       // pl.bell.suite.web.LiveBus#publish(String,String)
+    private Method publish;       // pl.bell.hub.web.LiveBus#publish(String,String)
     private boolean publishResolved;
 
-    public BellSuiteModule(BellChat plugin) {
+    public BellHubModule(BellChat plugin) {
         this.plugin = plugin;
     }
 
@@ -223,7 +223,7 @@ public final class BellSuiteModule implements BellModule, Listener {
     }
 
     @Override
-    public ActionResult invoke(SuiteAction action, Actor actor) {
+    public ActionResult invoke(HubAction action, Actor actor) {
         if (actor == null || !actor.admin()) return ActionResult.error("Brak uprawnień.");
         String a = action.name();
         var p = action.params();
@@ -617,7 +617,7 @@ public final class BellSuiteModule implements BellModule, Listener {
         try {
             m.invoke(null, TOPIC, json);
         } catch (Throwable ignored) {
-            // BellSuite wylaczony/przeladowany — bufor i tak trzyma wiadomosci do initial load
+            // BellHub wylaczony/przeladowany — bufor i tak trzyma wiadomosci do initial load
         }
     }
 
@@ -625,9 +625,9 @@ public final class BellSuiteModule implements BellModule, Listener {
         if (publishResolved) return publish;
         publishResolved = true;
         try {
-            var suite = Bukkit.getPluginManager().getPlugin("BellSuite");
-            if (suite == null) return null;
-            Class<?> bus = suite.getClass().getClassLoader().loadClass("pl.bell.suite.web.LiveBus");
+            var hub = Bukkit.getPluginManager().getPlugin("BellHub");
+            if (hub == null) return null;
+            Class<?> bus = hub.getClass().getClassLoader().loadClass("pl.bell.hub.web.LiveBus");
             publish = bus.getMethod("publish", String.class, String.class);
         } catch (Throwable t) {
             publish = null;

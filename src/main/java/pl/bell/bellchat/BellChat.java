@@ -100,18 +100,18 @@ public class BellChat extends JavaPlugin {
         reg("msgspy",    new MsgSpyCommand(this));
         reg("afk",       new AfkCommand(this));
 
-        // Integracja z panelem BellSuite (podglad czatu na zywo) — tylko gdy obecny.
-        // Lazy: klasy bell-suite-api ladowane dopiero w tym bloku (provided, brak w runtime bez BellSuite).
+        // Integracja z panelem BellHub (podglad czatu na zywo) — tylko gdy obecny.
+        // Lazy: klasy bell-hub-api ladowane dopiero w tym bloku (provided, brak w runtime bez BellHub).
         if (getServer().getPluginManager().getPlugin("BellHub") != null) {
             try {
-                var module = new pl.bell.bellchat.integration.BellSuiteModule(this);
+                var module = new pl.bell.bellchat.integration.BellHubModule(this);
                 getServer().getPluginManager().registerEvents(module, this);
                 getServer().getServicesManager().register(
-                        pl.bell.suite.api.BellModule.class, module, this,
+                        pl.bell.hub.api.BellModule.class, module, this,
                         org.bukkit.plugin.ServicePriority.Normal);
-                getLogger().info("Zarejestrowano modul BellChat w panelu BellSuite (czat na zywo).");
+                getLogger().info("Zarejestrowano modul BellChat w panelu BellHub (czat na zywo).");
             } catch (Throwable t) {
-                getLogger().warning("Nie udalo sie zarejestrowac modulu BellSuite: " + t.getMessage());
+                getLogger().warning("Nie udalo sie zarejestrowac modulu BellHub: " + t.getMessage());
             }
         }
 

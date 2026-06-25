@@ -40,7 +40,7 @@
             <version>5.4</version>
             <scope>provided</scope>
         </dependency>
-        <!-- Kontrakt panelu BellSuite — provided (runtime z BellSuite, NIE bundlowane) -->
+        <!-- Kontrakt panelu BellHub — provided (runtime z BellHub, NIE bundlowane) -->
         <dependency>
             <groupId>pl.bell</groupId>
             <artifactId>bell-hub-api</artifactId>
