@@ -63,10 +63,12 @@ public final class BellHubModule implements BellModule, Listener {
     @Override
     public List<Stat> dashboard() {
         int channels = plugin.getChannelManager().getChannels().size();
+        String lang = plugin.getConfig().getString("language", "en");
         return List.of(
                 new Stat("Kanaly", String.valueOf(channels), "#3FC9FF"),
                 new Stat("Gracze online", String.valueOf(Bukkit.getOnlinePlayers().size()), "#97C459"),
-                new Stat("Bufor wiadomosci", String.valueOf(recent.size()), "#8A5CF6"));
+                new Stat("Bufor wiadomosci", String.valueOf(recent.size()), "#8A5CF6"),
+                new Stat("Język", lang.toUpperCase(), "silver"));
     }
 
     @Override
