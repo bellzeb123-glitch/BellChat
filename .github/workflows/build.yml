@@ -16,8 +16,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Clone BellHub (bell-hub-api source)
-        run: git clone --depth 1 https://github.com/bellzeb123-glitch/BellHub.git BellHub
 
       - name: Set up Java 21
         uses: actions/setup-java@v5
@@ -26,8 +24,11 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+
       - name: Install bell-hub-api
-        run: mvn -B -f bell-hub-api/pom.xml clean install -DskipTests -q
+        run: |
+          git clone --depth 1 https://github.com/bellzeb123-glitch/bell-hub-api.git /tmp/bell-hub-api
+          mvn -f /tmp/bell-hub-api/pom.xml install -DskipTests -B -q
 
       - name: Build with Maven
         run: mvn -B clean package -DskipTests -q

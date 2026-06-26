@@ -176,8 +176,8 @@ public final class BellHubModule implements BellModule, Listener {
                         ActionField.bool("enabled", "Włączone")),
                 ActionDef.of("blockDuplicate.toggle", "Włącz/Wyłącz blokada duplikatów", "Ustawienia",
                         ActionField.bool("enabled", "Włączone")),
-                ActionDef.of("language.set", "Zmień język", "Ustawienia",
-                        ActionField.select("lang", "Język", List.of("pl", "en"))),
+                ActionDef.of("settings.language", "Język pluginu", "Ustawienia",
+                        ActionField.select("value", "Język", List.of("pl", "en"))),
                 ActionDef.of("antispam.setCooldown", "Ustaw cooldown antyspamu", "Ustawienia",
                         ActionField.text("seconds", "Sekundy (np. 3)")),
                 ActionDef.of("afk.setGroup", "Ustaw reguły AFK grupy", "AFK",
@@ -468,8 +468,13 @@ public final class BellHubModule implements BellModule, Listener {
                 plugin.getAntispamManager().reload();
                 return ActionResult.ok(en ? "Blokada duplikatów włączona." : "Blokada duplikatów wyłączona.");
             }
+            case "settings.language":
             case "language.set": {
-                String lang = p.getOrDefault("lang", "en").toLowerCase();
+                String lang = action.param("value");
+                if (lang == null || lang.isBlank()) {
+                    lang = p.getOrDefault("lang", "en");
+                }
+                lang = lang.toLowerCase();
                 if (!lang.equals("pl") && !lang.equals("en")) return ActionResult.error("Nieprawidłowy język.");
                 plugin.getConfig().set("language", lang);
                 plugin.saveConfig();
