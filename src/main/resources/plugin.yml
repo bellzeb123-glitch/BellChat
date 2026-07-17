@@ -1,7 +1,7 @@
-name: BellChat
-version: '1.26.1.2'
+﻿name: BellChat
+version: '1.26.2.0'
 main: pl.bell.bellchat.BellChat
-api-version: '1.21'
+api-version: '26.2'
 author: bellzeb123-glitch
 description: Full-featured chat plugin with channels, emoji, URL filter and broadcasts.
 

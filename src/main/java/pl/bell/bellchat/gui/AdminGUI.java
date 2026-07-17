@@ -67,7 +67,7 @@ public class AdminGUI implements Listener {
         inv.setItem(3, chatLockButton(plugin.getChatStateManager().isChatLocked()));
 
         // Rząd 2
-        inv.setItem(9,  toggle(Material.CHAIN,    t("gui-toggle-url-filter"),
+        inv.setItem(9,  toggle(Material.IRON_CHAIN,    t("gui-toggle-url-filter"),
                 getBool("url-filter.enabled", false),
                 t("gui-desc-url-filter-1"), t("gui-desc-url-filter-2"), t("gui-desc-url-filter-3")));
         inv.setItem(10, toggle(Material.LIME_DYE, t("gui-toggle-emoji"),
