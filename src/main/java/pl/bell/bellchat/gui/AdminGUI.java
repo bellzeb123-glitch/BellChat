@@ -424,7 +424,7 @@ public class AdminGUI implements Listener {
     private void reloadRelevant(String key) {
         if (key.startsWith("antispam"))        plugin.getAntispamManager().reload();
         else if (key.startsWith("url-filter")) plugin.getUrlFilterManager().reload();
-        else if (key.startsWith("broadcasts")) plugin.getBroadcastManager().reload();
+        else if (key.startsWith("broadcasts")) plugin.getBroadcastManager().reloadForced();
     }
 
     // ═══════════════════════════════════════════════════════════

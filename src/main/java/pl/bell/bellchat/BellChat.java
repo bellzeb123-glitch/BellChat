@@ -131,7 +131,8 @@ public class BellChat extends JavaPlugin {
 
     /**
      * FIX: reload() przeładowuje WSZYSTKIE managery.
-     * Bez tego /bch lang nie działało (MessageManager nie był przeładowywany).
+     * BroadcastManager NIE restartuje timerów, jeśli sekcja broadcasts bez zmian
+     * (BellLP sync wołał reload przy każdej grupie i zabijał auto-broadcast).
      */
     public void reload() {
         reloadConfig();
@@ -145,7 +146,15 @@ public class BellChat extends JavaPlugin {
         if (afkManager       != null) afkManager.reload();
         if (chatListener     != null) chatListener.reloadProfanityPatterns();
         if (tablistListener  != null) tablistListener.refreshAll();
-        getLogger().info("BellChat reloaded.");
+        getLogger().info("BellChat reloaded. Broadcast: "
+                + (broadcastManager != null ? broadcastManager.statusLine() : "n/a"));
+    }
+
+    /**
+     * Lekki refresh (TAB) bez ruszania auto-broadcastów — używane przez BellLP PlayerRefresh.
+     */
+    public void refreshDisplays() {
+        if (tablistListener != null) tablistListener.refreshAll();
     }
 
     private void printBanner() {

@@ -1,5 +1,6 @@
 package pl.bell.bellchat.managers;
 
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.scheduler.BukkitTask;
@@ -7,48 +8,62 @@ import pl.bell.bellchat.BellChat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 /**
  * BroadcastManager — cykliczne wiadomości broadcastowe.
  *
- * Konfiguracja w config.yml sekcja broadcasts:
- *
- *   broadcasts:
- *     enabled: true
- *     slots:
- *       slot1:
- *         enabled: true
- *         interval-seconds: 300
- *         messages:
- *           - "&6[Bell] &fZapraszamy na nasz Discord!"
- *           - "&6[Bell] &fSprawdź /warp sklep!"
- *         random: false   # false = kolejno, true = losowo
- *
- * Każdy slot ma własny scheduler i własną listę wiadomości.
- * Wiadomości w slocie rotują kolejno (lub losowo jeśli random: true).
+ * Konfiguracja w config.yml sekcja broadcasts.
+ * Każdy slot ma własny scheduler. reload() NIE restartuje timerów,
+ * jeśli sekcja broadcasts się nie zmieniła (Chroni przed BellLP sync
+ * wołającym BellChat.reload() przy każdej zmianie grupy).
  */
 public class BroadcastManager {
+
+    private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacyAmpersand();
 
     private final BellChat plugin;
     private final Logger log;
     private final List<BukkitTask> tasks = new ArrayList<>();
+    /** Fingerprint sekcji broadcasts — pomija restart timerów gdy bez zmian. */
+    private String lastFingerprint = "";
+    /** Opcjonalny sink do BellHub (live chat). */
+    private Consumer<String> hubSink;
 
     public BroadcastManager(BellChat plugin) {
         this.plugin = plugin;
-        this.log    = plugin.getLogger();
-        load();
+        this.log = plugin.getLogger();
+        load(false);
+    }
+
+    public void setHubSink(Consumer<String> hubSink) {
+        this.hubSink = hubSink;
     }
 
     // ── Load / reload ──────────────────────────────────────────
 
     public void load() {
-        // Anuluj istniejące taski przed przeładowaniem
-        cancelAll();
+        load(false);
+    }
 
+    /**
+     * @param forceRestart true = zawsze anuluj i odtwórz taski (np. po ręcznej zmianie z Huba)
+     */
+    public void load(boolean forceRestart) {
         var cfg = plugin.getConfig();
+        String fp = fingerprint(cfg);
+        if (!forceRestart && fp.equals(lastFingerprint) && !tasks.isEmpty()) {
+            log.fine("[BroadcastManager] Config broadcasts bez zmian — zostawiam działające timery.");
+            return;
+        }
+
+        cancelAll();
+        lastFingerprint = fp;
+
         if (!cfg.getBoolean("broadcasts.enabled", false)) {
-            log.info("[BroadcastManager] Auto-broadcasts wyłączone.");
+            log.info("[BroadcastManager] Auto-broadcasts wyłączone (broadcasts.enabled=false).");
             return;
         }
 
@@ -66,42 +81,54 @@ public class BroadcastManager {
             List<String> messages = slot.getStringList("messages");
             if (messages.isEmpty()) continue;
 
-            int intervalSeconds = slot.getInt("interval-seconds", 300);
-            boolean random      = slot.getBoolean("random", false);
-            long intervalTicks  = intervalSeconds * 20L;
+            int intervalSeconds = Math.max(30, slot.getInt("interval-seconds", 300));
+            boolean random = slot.getBoolean("random", false);
+            long intervalTicks = intervalSeconds * 20L;
+            long initialDelayTicks = 40L; // 2s — pierwszy broadcast szybko po starcie
 
-            // Indeks rotacji dla tego slotu (tablica jednoelementowa żeby lambda mogła mutować)
             int[] index = {0};
+            List<String> slotMessages = List.copyOf(messages);
+            String slotName = slotKey;
 
             BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-                if (Bukkit.getOnlinePlayers().isEmpty()) return;
+                try {
+                    if (Bukkit.getOnlinePlayers().isEmpty()) return;
+                    if (slotMessages.isEmpty()) return;
 
-                String raw;
-                if (random) {
-                    raw = messages.get((int)(Math.random() * messages.size()));
-                } else {
-                    raw = messages.get(index[0] % messages.size());
-                    index[0]++;
+                    String raw;
+                    if (random) {
+                        raw = slotMessages.get((int) (Math.random() * slotMessages.size()));
+                    } else {
+                        raw = slotMessages.get(index[0] % slotMessages.size());
+                        index[0]++;
+                    }
+                    sendBroadcast(raw, "auto:" + slotName);
+                } catch (Throwable t) {
+                    log.warning("[BroadcastManager] Błąd slotu '" + slotName + "': " + t.getMessage());
                 }
-
-                String colored = raw.replace("&", "§");
-                Bukkit.broadcastMessage(colored);
-
-            }, intervalTicks, intervalTicks);
+            }, initialDelayTicks, intervalTicks);
 
             tasks.add(task);
             loaded++;
-            log.info("[BroadcastManager] Slot '" + slotKey + "' → co " + intervalSeconds + "s, "
-                    + messages.size() + " wiad., " + (random ? "losowo" : "kolejno") + ".");
+            log.info("[BroadcastManager] Slot '" + slotKey + "' → co " + intervalSeconds
+                    + "s (pierwszy za 2s), " + slotMessages.size() + " wiad., "
+                    + (random ? "losowo" : "kolejno") + ".");
         }
 
         if (loaded > 0) {
             log.info("[BroadcastManager] Załadowano " + loaded + " aktywnych slotów.");
+        } else {
+            log.warning("[BroadcastManager] broadcasts.enabled=true, ale brak aktywnych slotów z wiadomościami.");
         }
     }
 
     public void reload() {
-        load(); // cancelAll() wywołane wewnątrz load()
+        load(false);
+    }
+
+    /** Wymusza restart timerów (toggle / edycja slotów z panelu). */
+    public void reloadForced() {
+        load(true);
     }
 
     public void cancelAll() {
@@ -113,6 +140,14 @@ public class BroadcastManager {
 
     public void shutdown() {
         cancelAll();
+        lastFingerprint = "";
+    }
+
+    public String statusLine() {
+        return "enabled=" + isGlobalEnabled()
+                + " tasks=" + tasks.size()
+                + " slots=" + getSlotKeys().size()
+                + " fp=" + (lastFingerprint.isEmpty() ? "-" : lastFingerprint.substring(0, Math.min(8, lastFingerprint.length())));
     }
 
     // ── Admin GUI helpers ────────────────────────────────────────
@@ -134,7 +169,7 @@ public class BroadcastManager {
     public void setSlotEnabled(String key, boolean enabled) {
         plugin.getConfig().set("broadcasts.slots." + key + ".enabled", enabled);
         plugin.saveConfig();
-        reload();
+        reloadForced();
     }
 
     public int getIntervalSeconds(String key) {
@@ -144,7 +179,7 @@ public class BroadcastManager {
     public void setIntervalSeconds(String key, int seconds) {
         plugin.getConfig().set("broadcasts.slots." + key + ".interval-seconds", Math.max(30, seconds));
         plugin.saveConfig();
-        reload();
+        reloadForced();
     }
 
     public boolean isRandom(String key) {
@@ -154,7 +189,7 @@ public class BroadcastManager {
     public void setRandom(String key, boolean random) {
         plugin.getConfig().set("broadcasts.slots." + key + ".random", random);
         plugin.saveConfig();
-        reload();
+        reloadForced();
     }
 
     public List<String> getMessages(String key) {
@@ -166,7 +201,7 @@ public class BroadcastManager {
         messages.add(message);
         plugin.getConfig().set("broadcasts.slots." + key + ".messages", messages);
         plugin.saveConfig();
-        reload();
+        reloadForced();
     }
 
     public void removeMessage(String key, int index) {
@@ -175,7 +210,7 @@ public class BroadcastManager {
         messages.remove(index);
         plugin.getConfig().set("broadcasts.slots." + key + ".messages", messages);
         plugin.saveConfig();
-        reload();
+        reloadForced();
     }
 
     public void editMessage(String key, int index, String newMessage) {
@@ -184,7 +219,7 @@ public class BroadcastManager {
         messages.set(index, newMessage);
         plugin.getConfig().set("broadcasts.slots." + key + ".messages", messages);
         plugin.saveConfig();
-        reload();
+        reloadForced();
     }
 
     public void createSlot(String key) {
@@ -195,20 +230,51 @@ public class BroadcastManager {
         plugin.getConfig().set(path + ".messages", List.of(
                 "&8[&6Bell&8] &fEdit this message in /bch gui → Broadcasts"));
         plugin.saveConfig();
-        reload();
+        reloadForced();
     }
 
     public void deleteSlot(String key) {
         plugin.getConfig().set("broadcasts.slots." + key, null);
         plugin.saveConfig();
-        reload();
+        reloadForced();
     }
 
-    /** Sends one message from the slot immediately (for admin preview). */
+    public boolean isGlobalEnabled() {
+        return plugin.getConfig().getBoolean("broadcasts.enabled", false);
+    }
+
     public void sendTest(String key) {
         List<String> messages = getMessages(key);
         if (messages.isEmpty()) return;
-        String raw = messages.get(0);
-        Bukkit.broadcastMessage(raw.replace("&", "§"));
+        sendBroadcast(messages.get(0), "test:" + key);
+    }
+
+    private void sendBroadcast(String raw, String source) {
+        Bukkit.getServer().broadcast(LEGACY.deserialize(raw));
+        Consumer<String> sink = hubSink;
+        if (sink != null) {
+            try {
+                sink.accept(raw);
+            } catch (Throwable ignored) {
+            }
+        }
+        log.fine("[BroadcastManager] Wysłano (" + source + ")");
+    }
+
+    private static String fingerprint(org.bukkit.configuration.file.FileConfiguration cfg) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(cfg.getBoolean("broadcasts.enabled", false)).append('|');
+        ConfigurationSection slots = cfg.getConfigurationSection("broadcasts.slots");
+        if (slots == null) return sb.toString();
+        for (String key : slots.getKeys(false)) {
+            ConfigurationSection slot = slots.getConfigurationSection(key);
+            if (slot == null) continue;
+            sb.append(key).append(':')
+                    .append(slot.getBoolean("enabled", true)).append(':')
+                    .append(slot.getInt("interval-seconds", 300)).append(':')
+                    .append(slot.getBoolean("random", false)).append(':')
+                    .append(Objects.hash(slot.getStringList("messages").toArray())).append(';');
+        }
+        return sb.toString();
     }
 }

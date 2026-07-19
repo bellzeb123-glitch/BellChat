@@ -54,6 +54,21 @@ public final class BellHubModule implements BellModule, Listener {
 
     public BellHubModule(BellChat plugin) {
         this.plugin = plugin;
+        // Auto-broadcast → też do podglądu live w BellHub
+        plugin.getBroadcastManager().setHubSink(raw -> {
+            String json = Json.obj()
+                    .add("ts", System.currentTimeMillis())
+                    .add("player", "AUTO")
+                    .add("uuid", "")
+                    .add("channel", "broadcast")
+                    .add("message", raw)
+                    .end();
+            synchronized (recent) {
+                if (recent.size() >= BUFFER) recent.pollFirst();
+                recent.addLast(json);
+            }
+            publishLive(json);
+        });
     }
 
     @Override public String id()          { return "bellchat"; }
@@ -290,8 +305,10 @@ public final class BellHubModule implements BellModule, Listener {
                 boolean en = "true".equals(p.get("enabled"));
                 plugin.getConfig().set("broadcasts.enabled", en);
                 plugin.saveConfig();
-                plugin.getBroadcastManager().reload();
-                return ActionResult.ok(en ? "Auto-broadcast włączony." : "Auto-broadcast wyłączony.");
+                plugin.getBroadcastManager().reloadForced();
+                return ActionResult.ok(en
+                        ? "Auto-broadcast włączony (pierwszy za ~2s)."
+                        : "Auto-broadcast wyłączony.");
             }
             case "broadcast.slotToggle": {
                 String slot = p.getOrDefault("slot", "").trim();
@@ -376,6 +393,12 @@ public final class BellHubModule implements BellModule, Listener {
                 if (slot.isEmpty()) return ActionResult.error("Podaj ID slotu.");
                 if (!plugin.getBroadcastManager().hasSlot(slot)) return ActionResult.error("Slot nie istnieje.");
                 plugin.getBroadcastManager().sendTest(slot);
+                if (!plugin.getBroadcastManager().isGlobalEnabled()) {
+                    return ActionResult.ok("Test OK — ale auto-broadcast GLOBALNIE wyłączony (włącz przełącznik u góry).");
+                }
+                if (!plugin.getBroadcastManager().isSlotEnabled(slot)) {
+                    return ActionResult.ok("Test OK — ale ten slot jest wyłączony (auto go pomija).");
+                }
                 return ActionResult.ok("Wyslano testowy broadcast ze slotu " + slot + ".");
             }
             case "channel.toggle": {
